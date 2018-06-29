@@ -1,0 +1,25 @@
+# Using git config core.autocrlf true can help, but not on a multi-developpers project.
+# This command has to be the same on each developper machine, and that's not always the case.
+# powershell command to list all the extensions used in a folder : 
+# >> dir -recurse | select-object extension -unique
+#
+# .gitattributes
+# =================================================
+# Custom settings for progress projects
+#
+# and leave all files untouched by default
+* -text
+
+# Force the following filetypes to have unix eols
+*.sh text eol=lf
+
+# convert text file eol using the auto config
+#* text=auto
+
+# Force the following to have windows eols
+*.md text eol=lf
+
+# The following filetypes will not have eol replacement and will not generate text diff
+# binary is a "macro" for -text -diff
+*.jpg binary
+*.png binary
