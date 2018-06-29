@@ -35,7 +35,7 @@ Sets configuration values for things like your user name, email, and gpg key, yo
 
 ```bash
 git help
-git config --global user.name "Julien"
+git config --global user.name "User"
 git config --global user.email "mymail@truc.com"
 git config --global color.ui true # pretty cmd line colors
 git config --global core.editor E:/outils/notepad++.exe
@@ -207,12 +207,14 @@ Undoing/modifying a commit
 
 ```bash
 git reset --soft HEAD^ # undo last commit, put changes into staging, moving to the commit BEFORE HEAD = HEAD^
-git commit --amend  -m "new message # change commit message
+git commit --amend  -m "new message" # change commit message
 git reset --hard HEAD^ # undo last commit and all changes
 git reset --hard HEAD^^ # undo last 2 commit and all changes
 
 git add todo.txt
 git commit --ammend -m "modify" # what was staged is added to the last commit (--amend)
+
+git reset --hard origin/master # mettre la branche local en équivalence avec la branch remote
 ```
 
 Add and commit
@@ -243,6 +245,8 @@ Branches
 git branch <branch> # create new branch
 git checkout <branch> # switch to branch
 git checkout -b <branch> # create then switch to branch
+git checkout -b <branch> origin/<branch> # same + track a remote branch
+git branch --track <branch> origin/<branch>
 git branch # list branches
 git branch -r # list all remote branches
 git checkout master
@@ -346,7 +350,22 @@ rebase conflicts
 ```bash
 git status
 # edit unmerged files
-git add file.txt
+git add file.txt # mark as resolved
 git rebase --continue # --skip/--abort
+```
+
+stash
+
+```bash
+git stash # met le repo dans le même état qu'un git reset --hard HEAD
+git stash save "ma super modif"
+git stash list
+```
+
+Réappliquer les modifs :
+
+```bash
+git stash branch myfeature # sur une nouvelle branche
+git stash pop # branche actuelle
 ```
 

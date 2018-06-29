@@ -2,19 +2,32 @@
 # This command has to be the same on each developper machine, and that's not always the case.
 # powershell command to list all the extensions used in a folder : 
 # >> dir -recurse | select-object extension -unique
-#
-# .gitattributes
-# =================================================
-# Custom settings for progress projects
-#
-# and leave all files untouched by default
+
+# Once this file is modified, you can commit the new eol using :
+#git read-tree --empty   # Clean index, force re-scan of working directory
+#git add .
+#git status        # Show files that will be normalized
+#git commit -m "Introduce end-of-line normalization"
+
+# But the files in your working directory will still have wrong eol, to fix that :
+#git rm --cached -r .
+#git reset --hard
+
+#*         text=auto     # git decides if this path is a text or not, if it is, eol are converted to LF
+#*.txt	   text          # enables eol conversion for this path (eol conversion takes place w/o git having to guess)
+#*.vcproj  text eol=crlf # git forces eol to CRLF on checkout and normalize on checkin
+#*.sh	   text eol=lf   # convert to LF, preventing CRLF conversion on checkout
+#*.jpg	   -text         # git does not attempt eol conversion on check in/out 
+#                        # when git convert w/o you specifying eol=, it uses the following config : core.autocrlf overrides core.eol
+
+# leave all files untouched by default
 * -text
+
+# convert all file eol using the auto config
+#* text=auto
 
 # Force the following filetypes to have unix eols
 *.sh text eol=lf
-
-# convert text file eol using the auto config
-#* text=auto
 
 # Force the following to have windows eols
 *.md text eol=lf
