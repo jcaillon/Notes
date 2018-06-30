@@ -1,37 +1,23 @@
+# GIT CHEAT SHEET
 
-## Cool sites 
+## Cool sites
 
 - http://onlywei.github.io/explain-git-with-d3/#branch
 - http://marklodato.github.io/visual-git-guide/index-en.html
 - http://think-like-a-git.net/sections/graph-theory/reachability.html
 - https://github.com/pluralsight/git-internals-pdf/releases
 
-```git
-------------
-*   Merge branch 'report-a-bug'
-|\
-| * Add the feedback button
-* | Merge branch 'refactor-button'
-|\ \
-| |/
-| * Use the Button class for all buttons
-| * Extract a generic Button class from the DownloadButton one
-------------
+## TODO
 
-    o---o---o---o---o---o---o---o  master
-	 \			 \
-	  o---o---o---o---o	  o'--o'--o'--o'--o'--M	 subsystem
-			   \			     /
-			    *---*---*-..........-*--*  topic
-
-```
+- read file:///C:/Program%20Files/Git/mingw64/share/doc/git-doc/git-rebase.html
+- read file:///C:/Program%20Files/Git/mingw64/share/doc/git-doc/githooks.html
+- read file:///C:/Program%20Files/Git/mingw64/share/doc/git-doc/git-receive-pack.html
 
 ## Basics
 
 ### git config
 
 Sets configuration values for things like your user name, email, and gpg key, your preferred diff algorithm, file formats to use, proxies, remotes and tons of other stuff. For a full list, see the git-config docs (http://www.kernel.org/pub/software/scm/git/docs/git-config.html)
-
 
 ```bash
 git help
@@ -47,7 +33,6 @@ git config --global alias.lol "log --oneline --graph --decorate --abbrev-commit 
 git config --global alias.pushall "push --recurse-submodules=on-demand"
 git lol
 ```
-
 ### git init
 
 Initializes a git repository – creates the initial ‘.git’ directory in a new or existing project.
@@ -204,7 +189,7 @@ _git reset mode commit_ :
 
 ### git rebase
 
-An alternative to merge that rewrites your commit history to move commits since you branched off to apply to the current head instead. A bit dangerous as it discards existing commit objects.
+An alternative to merge that rewrites your commit history to move commits since you branched off to apply to the current head instead. Reapply commits on top of another base tip.
 
 1. move all changes to <currentbranch> which are not in <branch> to a temp area
 2. run all <branch> commits
@@ -315,14 +300,18 @@ A parent will point to a specific commit of a submodule. Submodules can be updat
 
 ```bash
 git submodule add git@example.com:project.git # will add .submodules (config file) and the project file (the submodule itself) 
+git submodule update --init --recursive # this will add the submodules to the .git/config + clone + checkout them
+```
+
+```bash
 git clone git@example.com:myproject_containing_submodules.git
 # the submodules will be empty directories, you need to initialise the submodules
 git submodule init # goes through the .gitmodules file and adds an entry to .git/config for each submodule
 # now we can run update for each submodules which will clone the repo + checkout the specific commit pointed by the parent project
 git submodule update # clone + checkout submodule
 # OR...
-# clone with : 
-git clone --recurse-submodules <url> 
+# clone with :
+git clone --recurse-submodules <url>
 # which is equivalent to :
 git clone <url> # plus
 git submodule update --init --recursive
@@ -494,3 +483,25 @@ Removes objects that are no longer pointed to by any object in any reachable bra
 ### git-daemon
 
 Runs a simple, unauthenticated wrapper on the git-upload-pack program, used to provide efficient, anonymous and unencrypted fetch access to a Git repository.
+
+---
+
+```git
+------------
+*   Merge branch 'report-a-bug'
+|\
+| * Add the feedback button
+* | Merge branch 'refactor-button'
+|\ \
+| |/
+| * Use the Button class for all buttons
+| * Extract a generic Button class from the DownloadButton one
+------------
+
+    o---o---o---o---o---o---o---o  master
+	 \			 \
+	  o---o---o---o---o	  o'--o'--o'--o'--o'--M	 subsystem
+			   \			     /
+			    *---*---*-..........-*--*  topic
+
+```
