@@ -1,0 +1,16 @@
+
+# WHAT = SUBJECT LINE (keep it short) = <branch><issue> <short description>
+
+# WHY and HOW
+# Explain why this change is being made
+
+# RELATED
+# Provide links/keys to any revelant issues or other resources
+
+# REMEMBER...
+# use lower case in the subject line 
+# start with a verb in imperative tone in the subject 
+# do not end the subject with a period 
+# separate subject and body with a blank line 
+# use the body to explain what and why versus how 
+# you can use multiple lines with a dash "-" for bullet points in body 

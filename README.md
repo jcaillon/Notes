@@ -1,0 +1,3 @@
+# About
+
+A simple repository regrouping personnal notes on various topics...

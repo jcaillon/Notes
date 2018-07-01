@@ -4,8 +4,10 @@
 
 - http://onlywei.github.io/explain-git-with-d3/#branch
 - http://marklodato.github.io/visual-git-guide/index-en.html
-- http://think-like-a-git.net/sections/graph-theory/reachability.html
+- http://think-like-a-git.net
 - https://github.com/pluralsight/git-internals-pdf/releases
+- https://speakerdeck.com/lemiorhan/10-git-anti-patterns-you-should-be-aware-of
+- https://www.atlassian.com/git/tutorials/what-is-version-control
 
 ## TODO
 
@@ -13,7 +15,54 @@
 - read file:///C:/Program%20Files/Git/mingw64/share/doc/git-doc/githooks.html
 - read file:///C:/Program%20Files/Git/mingw64/share/doc/git-doc/git-receive-pack.html
 
+---
+
 ## Basics
+
+### Vocabulary
+
+**reachable** : All of the ancestors of a given commit are said to be "reachable" from that commit. More generally, one object is reachable from another if we can reach the one from the other by a chain that follows tags to whatever they tag, commits to their parents or trees, and trees to the trees or blobs that they contain
+
+**Headless** : not reachable from a reference (and elligible to be garbage collected)
+
+**dangling object** : an unreachable object (there is no reference to it from any reference or object in the repo)
+
+**detached HEAD** : Normally the HEAD stores the name of a branch, and commands that operate on the history HEAD represents operate on the history leading to the tip of the branch the HEAD points at. However, Git also allows you to check out an arbitrary commit that isn’t necessarily the tip of any particular branch. The HEAD in such a state is called "detached"
+
+**Tip of a branch** : most recent commit of a branch = branch HEAD
+
+**head** : a named reference to the commit at the tip of a branch, stored in `$GIT_DIR/refs/heads/`
+
+**HEAD** : the current branch. Is a reference of one of the heads in your repo, except when using a detached HEAD
+
+**object** : unit of storage identified by the SHA-1 of its content + history, they are stored in `$GIT_DIR/objects/`
+
+**ref** : a name that begins with ref/ (e.g. refs/heads/master) that points to an object or another ref (a symbolic ref). They can be abbreviated when used in command (HEAD for instance). Stored in `$GIT_DIR/refs` see `git help revisions`. _A reference is what makes a commit reachable!_
+
+**symref** : symbolic reference, instead of containing the SHA, it is of the format refs/some/thing, are a simpler form like HEAD
+
+**tag** : stored under `$GIT_DIR/refs/tags/`, points to a object (commit or another tag)
+
+**commit-ish** : commit object, tag object, basically anything that git can turn into a SHA
+
+**tree-ish** : either a tree object (e.i. list of files/directory), tag object or commit-ish
+
+**dirty working directory** : a working dir is dirty if it does not correspond to the revesion referenced by the current HEAD
+
+**fast-forward** : a special type of merge where the first common ancestor of the merged branched is also the tip of the branch you merge onto. This will simply update the revision of the branch you are merging onto
+
+**merge base** : first common ancestor (reachable by both branch)
+
+```bash
+git branch
+# * master
+ls .git/refs/heads/
+# master
+cat .git/refs/heads/master
+# <commit_sha>
+cat .git/HEAD
+# ref: refs/heads/master
+```
 
 ### git config
 
@@ -29,10 +78,17 @@ git config --global merge.tool E:/outils/winmerge++.exe
 git config http.proxy http://proxy:8080 # for local repo only
 git config user.name # get current value for this property
 git config --list
-git config --global alias.lol "log --oneline --graph --decorate --abbrev-commit --all"
+git config --global alias.lol "log --oneline --graph --decorate --abbrev-commit"
 git config --global alias.pushall "push --recurse-submodules=on-demand"
+git config --global commit.template ~/.gitmessage.txt
+git config --global commit.cleanup strip
 git lol
 ```
+
+---
+
+## Commands
+
 ### git init
 
 Initializes a git repository – creates the initial ‘.git’ directory in a new or existing project.
@@ -59,6 +115,14 @@ git add *.txt # all .txt in current directory
 git add "*.txt" # all .txt in project
 git add docs/*.txt
 git add -i # interactive mode... kind of useless
+```
+
+### git mv
+
+Move or rename a file, directory or symlink
+
+```bash
+git mv <source> <dest>
 ```
 
 ### git rm
@@ -93,18 +157,22 @@ git status -sb # shorter version
 
 ### git branch
 
-Lists existing branches, including remote branches if ‘-a’ is provided. Creates a new branch if a branch name is provided. Branches can also be created with ‘-b’ option to ‘git checkout’
+Lists existing branches, including remote branches if ‘-a’ is provided. Creates a new branch if a branch name is provided. Branches can also be created with ‘-b’ option to ‘git checkout’.
+
+Branches are *savepoints*. Since they are references, they make commits reachable. Creating a commit is thus a way to nail down part of the graph that you migh want to come back to later.
+
+And because neither git merge nor git rebase will change your existing commits (remember, a commit's ID is a hash of its contents and its history), you can create a temporary branch any time you want to try something you're even just a little bit unsure about.
 
 ```bash
 git branch <branch> # create new branch
 git branch <branch> <startpoint> # startpoint can be a commit sha, a branch name
 git branch <branch> origin/<branch> # create a local branch that tracks a remote branch
-git branch -u <remote>/<branch> <branch> # set up the remote branch to track for the local branch
+git branch -u <remote>/<branch> <branch> # set up the remote branch to track for the local branch (to push/merge)
+git branch -u <remote>/<branch> # same for current branch
 
 git branch # list branches
 git branch -r # list all remote branches
 git branch -a -v # list all branches
-git merge <branch> # merge branch onto the currently checked out branch (master)
 git branch -d <branch> # soft delete / -D for hard delete
 git branch -m <oldname> <newname> # rename branch
 git branch -a -v --no-merged # list unmerged branch
@@ -138,6 +206,32 @@ git checkout LICENSE # blow away all the changes since last commit
 git checkout HEAD LICENSE # specify a commit to rollback this file to
 ```
 
+### git reset
+
+Reset current HEAD to the specified state.
+
+Resets your index and working directory to the state of your last commit, in the event that something screwed up and you just want to go back.
+
+```bash
+git reset -- file.txt # unstage a file (HEAD is the last commit), opposite of git add file.txt, use -- to separated options from file names
+git reset <commit-ish> file.txt # specify a commit (default to HEAD)
+git reset --soft HEAD^ # undo last commit, all files ready to be commited again, moving to the commit BEFORE HEAD = HEAD^
+git reset --hard HEAD^ # undo last commit and reset your working dir as well as the index
+git reset --hard HEAD^^ # undo last 2 commit
+git reset HEAD~5 # 5 commits ago, defaults to --mixed so it will reset the index as well as the HEAD
+# see also...
+git help revisions
+
+git reset --hard origin/master # this makes the local branch strictly equal to the remote branch
+git reset <mode> <commit-ish>
+```
+
+_git reset mode commit_ :
+
+- --soft : only reset HEAD to commit, leave workdir/index untouched, files are still ready to be commited
+- --mixed : + resets the index (modified files are all unstaged)
+- --hard : + resets the wordir, all modified files are lost.
+
 ### git merge
 
 Merges one or more branches into your current branch and automatically creates a new commit if there are no conflicts. When the merge resolves as a fast-forward, only update the branch pointer, without creating a merge commit.
@@ -163,48 +257,30 @@ i # insert mode
 :qa! # cancel and quit
 ```
 
-### git reset
-
-Resets your index and working directory to the state of your last commit, in the event that something screwed up and you just want to go back.
-
-```bash
-git reset -- file.txt # unstage a file (HEAD is the last commit), opposite of git add file.txt, use -- to separated options from file names
-git reset <commit> file.txt # specify a commit (default to HEAD)
-git reset --soft HEAD^ # undo last commit, all files ready to be commited again, moving to the commit BEFORE HEAD = HEAD^
-git reset --hard HEAD^ # undo last commit and reset your working dir as well as the index
-git reset --hard HEAD^^ # undo last 2 commit
-git reset HEAD~5 # 5 commits ago, defaults to --mixed so it will reset the index as well as the HEAD
-# see also...
-git help revisions
-
-git reset --hard origin/master # this makes the local branch strictly equal to the remote branch
-git reset <mode> <commit>
-```
-
-_git reset mode commit_ :
-
-- --soft : only reset HEAD to commit, leave workdir/index untouched, files are still ready to be commited
-- --mixed : + resets the index (modified files are all unstaged)
-- --hard : + resets the wordir, all modified files are lost.
-
 ### git rebase
 
 An alternative to merge that rewrites your commit history to move commits since you branched off to apply to the current head instead. Reapply commits on top of another base tip.
 
-1. move all changes to <currentbranch> which are not in <branch> to a temp area
-2. run all <branch> commits
-3. run all commits in the temp area, one at a time
-
 ```bash
 git checkout <currentbranch>
 git rebase <branch>
-git rebase # will rebase from origin/<currentbranch>
+# OR...
+git rebase <apply_commits_of_this_branch_first> <then_apply_those_commits>
+```
+
+1. find the first common ancestor commit of <branch> and <currentbranch> (the first commit reachable from both branch)
+2. move all changes of <currentbranch> made since this common commit (=which are not in <branch>) to a temp area
+3. run all <branch> commits
+4. run all commits in the temp area, one at a time
+
+```bash
+git rebase # will rebase from origin/<currentbranch> if it exists
 
 # merge feature to master :
 git checkout feature
 git rebase master # at this point, our local feature branch has been modified and is no longer the same as the origin! it has all the commits
 git checkout master
-git merge feature
+git merge feature # this will be a fast-forward merge
 ```
 
 rebase conflicts
@@ -223,6 +299,37 @@ git rebase -i HEAD~3 # alter the last 3 commits of this branch in interactive mo
 # it alters every commit AFTER the one you specify, so git rebase HEAD wouldn't do anything
 ```
 
+beware :
+
+Never rebase a public branch (e.g. master, release branch, shared dev branch...). You want to rebase ONTO a local (or single user) branch then merge fast-forward in the public branch! That way, you don't change the history on the public branch, you just fast-forward new commits.
+
+#### git merge/rebase with confidence
+
+Use the savepoint pattern described here to merge without the fear of losing things.
+
+In this scenario, I want the changes of _feature_ branch on my _master_ branch.
+
+1. Make sure you're on the right branch and that you have a clean working state, `git status` should show the _master_ branch with nothing to commit
+2. Create a new branch to use as a savepoint, but don't switch to it, `git branch feature_savepoint`;  `git status` should still show _master_
+3. Do the merge or the rebase
+4. Is it OK?
+5. **NO** : go back to savepoint `git reset --hard feature_savepoint`
+6. **YES** (or clean up) : delete the savepoint `git branch -d feature_savepoint`
+
+*Note* : you don't actually need this in case of a merge, you can just `git reset --hard <commit-ish>` to the commit that was the tip of you branch before the failed merge!
+
+#### git merge versus rebase
+
+**merge** :
+
+- pros : easier, better traceability of the dev (keeps info about the historical existence of a feature branch and its commits)
+- cons : history is confusing and you can't revert features easily since they are not packed as a single commit
+
+**rebase** :
+
+- pros : clean history, easy to manipulate commits as they are atomical
+- cons : hard than merge and needs a better comprehension of git, you lose info/context on the feature branch (or you keep a stale feature branch), you need to protect shared branches when rebasing or you take the risk to rewrite history on a multi user branch
+
 ### git stash
 
 Temporarily saves changes that you don’t want to commit immediately for later. Can re-apply the saved changes at any time.
@@ -231,10 +338,10 @@ Temporarily saves changes that you don’t want to commit immediately for later.
 git stash # saves all modified and tracked files (staged + non staged), restores the last commit
 # it puts the working dir in the same state as a :
 git reset --hard HEAD
-git stash save # equals git stash
-git stash save "ma super modif" # provide a message that will be displayed for this stash
-git stash save --keep-index # the staging area is not stashed!
-git stash save --include-untracked # the staging area is not stashed!
+git stash push # equals git stash
+git stash push "ma super modif" # provide a message that will be displayed for this stash
+git stash push --keep-index # the staging area is not stashed!
+git stash push --include-untracked # the staging area is not stashed!
 git stash apply # brings stashed files back
 git stash list # list the stashed files (the names are in the first column)
 git stash list --stat # git stash list can take the same options as the git log
@@ -262,10 +369,15 @@ git push --tags # push tags to remote
 ### git fetch
 
 Fetches all the objects that a remote version of your repository has that you do not yet so you can merge them into yours or simply inspect them.
+Fetching a branch means to get the branch’s head ref from a remote repository, to find out which objects are missing from the local object database, and to get them, too.
 
 ### git pull
 
-Runs a `git fetch` then a `git merge`.
+Runs a `git fetch` then a `git merge FETCH_HEAD`.
+
+Use `git pull --rebase` or `git pull --rebase=interactive` to call rebase instead of merge as the 2nd command!
+
+See `pull.rebase`, `branch.<name>.rebase` and `branch.autoSetupRebase` in git-config if you want to make git pull always use --rebase instead of merging.
 
 ### git push
 
@@ -416,9 +528,15 @@ git log --since=2000-01-01 --until=1.minute.ago
 
 ### git blame
 
+Show what revision and author last modified each line of a file
+
 ```bash
 git blame file.txt --date short
 ```
+
+### git bisect
+
+Use binary search to find the commit that introduced a bug
 
 ### git show
 
@@ -454,15 +572,13 @@ git diff <SHA1>..<SHA2>
 git diff <branch1> <branch2>
 ```
 
-### gitk
-
-Graphical Tcl/Tk based interface to a local Git repository.
-
-### instaweb
-
-Wrapper script to quickly run a web server with an interface into your repository and automatically directs a web browser to it
+---
 
 ## Extra tools
+
+### git hooks
+
+Located in `$GIT_DIR/hooks/*` (or `git config core.hooksPath`)
 
 ### git archive
 
@@ -480,11 +596,23 @@ Does an integrity check of the Git “filesystem”, identifying dangling pointe
 
 Removes objects that are no longer pointed to by any object in any reachable branch.
 
+### gitk
+
+Graphical Tcl/Tk based interface to a local Git repository.
+
+### instaweb
+
+Wrapper script to quickly run a web server with an interface into your repository and automatically directs a web browser to it
+
 ### git-daemon
 
 Runs a simple, unauthenticated wrapper on the git-upload-pack program, used to provide efficient, anonymous and unencrypted fetch access to a Git repository.
 
 ---
+
+## Work in progress
+
+Ways to represent a graph...
 
 ```git
 ------------
@@ -498,10 +626,19 @@ Runs a simple, unauthenticated wrapper on the git-upload-pack program, used to p
 | * Extract a generic Button class from the DownloadButton one
 ------------
 
-    o---o---o---o---o---o---o---o  master
-	 \			 \
-	  o---o---o---o---o	  o'--o'--o'--o'--o'--M	 subsystem
-			   \			     /
-			    *---*---*-..........-*--*  topic
+o---o---o---o---o---o---o---o  master
+	\			 \
+	o---o---o---o---o	  o'--o'--o'--o'--o'--M	 subsystem
+			\			     /
+			*---*---*-..........-*--*  topic
+
+*   ebcf543 (HEAD -> 3.0.0/ft/issue2) Merge branch 'v3.0.0/ft/issue1' into 3.0.0/ft/issue2
+|\
+| * 559b1f3 v3.0.0/ft/issue1 second commit
+| * 269d9e4 3.0.0/ft/issue1 mon truc
+* | 4c7dacc 3.0.0/ft/issue2 derp
+* | 706aa59 3.0.0/ft/issue2 thrid
+|/
+* 295c53b (origin/v1.0.0_rel, origin/HEAD, v1.0.0_rel, feature/fuck) init - initialisation du repo
 
 ```
