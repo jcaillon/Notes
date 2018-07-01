@@ -1,0 +1,33 @@
+[commit]
+    gpgsign = true
+[gpg]
+    program = E:/outils/gnupg/GnuPG/pub/gpg.exe
+    interactive = auto
+[alias]
+    st = status
+    stb = status -sb
+    stp = status --porcelain
+    ci = commit
+    br = branch
+    co = checkout
+    rs = reset
+    rsh = reset --hard
+    rss = reset --soft
+    aa = add --all
+    pullr = pull --rebase
+    unstage = reset HEAD
+    lol = log --graph --decorate --pretty=oneline --abbrev-commit
+    lola = log --graph --decorate --pretty=oneline --abbrev-commit --all
+    logpush = "!git --no-pager log origin/$(git currentbranch)..HEAD --oneline"
+    logpull = "!git --no-pager log HEAD..origin/$(git currentbranch) --oneline"
+    whatsnew = "!git diff origin/$(git currentbranch)...HEAD"
+    whatscoming = "!git diff HEAD...origin/$(git currentbranch)"
+    currentbranch = "!git branch | grep \"^\\*\" | cut -d \" \" -f 2"
+[color]
+    branch = true
+    diff = true
+    status = true
+    interactive = true
+[commit]
+    template = ~/.gitmessage.txt
+    cleanup = strip

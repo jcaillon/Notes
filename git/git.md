@@ -232,6 +232,15 @@ _git reset mode commit_ :
 - --mixed : + resets the index (modified files are all unstaged)
 - --hard : + resets the wordir, all modified files are lost.
 
+### git clean
+
+Cleans untracked files from the working directory
+
+```bash
+git clean -nd # doesn't clean anything, dry run to see what happens
+git clean -fd # clean all including directories
+```
+
 ### git merge
 
 Merges one or more branches into your current branch and automatically creates a new commit if there are no conflicts. When the merge resolves as a fast-forward, only update the branch pointer, without creating a merge commit.
