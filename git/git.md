@@ -372,6 +372,7 @@ Tags a specific commit with a simple, human readable handle that never moves.
 git tag # list all tags
 git checkout <tag>
 git tag -a <tag> -m "description" # create a new tag
+git tag <tag> # create a new tag
 git push --tags # push tags to remote
 ```
 
