@@ -31,3 +31,5 @@
 [commit]
     template = ~/.gitmessage.txt
     cleanup = strip
+[core]
+	editor = 'C:/data/repo/3P_notepad++x64/notepad++.exe' -multiInst -notabbar -nosession -noPlugin

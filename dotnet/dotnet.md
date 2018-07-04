@@ -18,3 +18,19 @@ dotnet add reference ../MyProject/MyProject.csproj
 dotnet sln todo.sln add **/*.csproj
 dotnet sln remove **/*.csproj
 ```
+
+### install build tools
+
+https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2017
+
+- MsBuild tools
+- .Net Core build tools
+- Individual components :
+  - (Testing tools core features) optional
+  - .Net framework 4.6.1 SKD
+  - .Net framework 4.6.1 Targeting pack
+
+
+### evzervzer
+
+https://github.com/Microsoft/msbuild/wiki/MSBuild-Tips-&-Tricks

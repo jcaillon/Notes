@@ -1,11 +1,10 @@
+### WHAT (this is the subject line, keep it short = <branch><issue> <short description>)
 
-# WHAT = SUBJECT LINE (keep it short) = <branch><issue> <short description>
+# keep the line below empty to separate the subject from the body
 
-# WHY and HOW
-# Explain why this change is being made
+### WHY and HOW (Explain why this change is being made)
 
-# RELATED
-# Provide links/keys to any revelant issues or other resources
+### RELATED INFORMATION (Provide links/keys to any relevant issues or other resources)
 
 # REMEMBER...
 # use lower case in the subject line 

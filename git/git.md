@@ -8,12 +8,11 @@
 - https://github.com/pluralsight/git-internals-pdf/releases
 - https://speakerdeck.com/lemiorhan/10-git-anti-patterns-you-should-be-aware-of
 - https://www.atlassian.com/git/tutorials/what-is-version-control
+- http://shafiulazam.com/gitbook/1_the_git_object_model.html
 
-## TODO
+TO READ...
 
-- read file:///C:/Program%20Files/Git/mingw64/share/doc/git-doc/git-rebase.html
-- read file:///C:/Program%20Files/Git/mingw64/share/doc/git-doc/githooks.html
-- read file:///C:/Program%20Files/Git/mingw64/share/doc/git-doc/git-receive-pack.html
+- https://www.atlassian.com/blog/git/alternatives-to-git-submodule-git-subtree
 
 ---
 
@@ -23,7 +22,7 @@
 
 **reachable** : All of the ancestors of a given commit are said to be "reachable" from that commit. More generally, one object is reachable from another if we can reach the one from the other by a chain that follows tags to whatever they tag, commits to their parents or trees, and trees to the trees or blobs that they contain
 
-**Headless** : not reachable from a reference (and elligible to be garbage collected)
+**Headless** : not reachable from a reference (and eligible to be garbage collected)
 
 **dangling object** : an unreachable object (there is no reference to it from any reference or object in the repo)
 
@@ -47,7 +46,7 @@
 
 **tree-ish** : either a tree object (e.i. list of files/directory), tag object or commit-ish
 
-**dirty working directory** : a working dir is dirty if it does not correspond to the revesion referenced by the current HEAD
+**dirty working directory** : a working dir is dirty if it does not correspond to the revision referenced by the current HEAD
 
 **fast-forward** : a special type of merge where the first common ancestor of the merged branched is also the tip of the branch you merge onto. This will simply update the revision of the branch you are merging onto
 
@@ -70,10 +69,13 @@ Sets configuration values for things like your user name, email, and gpg key, yo
 
 ```bash
 git help
+git config --edit
+git config --global --edit
 git config --global user.name "User"
 git config --global user.email "mymail@truc.com"
 git config --global color.ui true # pretty cmd line colors
-git config --global core.editor E:/outils/notepad++.exe
+git config --global core.editor "'C:/Program Files/Notepad++/notepad++.exe' -multiInst -notabbar -nosession -noPlugin"
+git config --global core.editor "'C:/data/outils/Sublime Text Build 3126 x64/sublime_text.exe' --wait --new-window"
 git config --global merge.tool E:/outils/winmerge++.exe
 git config http.proxy http://proxy:8080 # for local repo only
 git config user.name # get current value for this property
@@ -82,6 +84,8 @@ git config --global alias.lol "log --oneline --graph --decorate --abbrev-commit"
 git config --global alias.pushall "push --recurse-submodules=on-demand"
 git config --global commit.template ~/.gitmessage.txt
 git config --global commit.cleanup strip
+git config core.hooksPath ~/.githooks
+git config core.hooksPath C:/data/repo/_gitlab/GitHooks/hooks
 git lol
 ```
 
@@ -92,6 +96,8 @@ git lol
 ### git init
 
 Initializes a git repository – creates the initial ‘.git’ directory in a new or existing project.
+
+Good to know, you can define a new template for the initial .git folder. This allows you to modify the default hooks (for instance).
 
 ### git clone
 
@@ -140,11 +146,17 @@ git rm --cached README # equivalent to above, unstage and remove paths only from
 Takes all of the changes staged in the index (that have been ‘git add’ed), creates a new commit object pointing to it, and advances the branch to point to that new commit.
 
 ```bash
+git commit # will open the commit template for you to modify
 git commit -m "description" # take a snapshot of the stage area
 git commit -a -m "description" # -a add changes from all tracked files (but new files = untracked are not affected)
 git commit --amend -m "new message" # change the last commit (you can specify a new message like here or the previous one will be used by default). Was was staged is added to the last commit
 git commit -C <sha> # reuse a commit message / author / date
 ```
+
+*Remember...* : in the commit message you have two parts :
+
+- The subject, which is the first line of the message. It should be short (<50 characters) and contain the issue it fixes
+- The body, separated from the subject by an empty line, which contains more details about the commit
 
 ### git status
 
@@ -157,7 +169,7 @@ git status -sb # shorter version
 
 ### git branch
 
-Lists existing branches, including remote branches if ‘-a’ is provided. Creates a new branch if a branch name is provided. Branches can also be created with ‘-b’ option to ‘git checkout’.
+Lists existing branches, including remote branches if `-a` is provided. Creates a new branch if a branch name is provided. Branches can also be created with `-b` option to `git checkout`.
 
 Branches are *savepoints*. Since they are references, they make commits reachable. Creating a commit is thus a way to nail down part of the graph that you migh want to come back to later.
 
@@ -165,7 +177,7 @@ And because neither git merge nor git rebase will change your existing commits (
 
 ```bash
 git branch <branch> # create new branch
-git branch <branch> <startpoint> # startpoint can be a commit sha, a branch name
+git branch <branch> <commit-ish> # can be a commit sha, a branch name, tag
 git branch <branch> origin/<branch> # create a local branch that tracks a remote branch
 git branch -u <remote>/<branch> <branch> # set up the remote branch to track for the local branch (to push/merge)
 git branch -u <remote>/<branch> # same for current branch
@@ -198,12 +210,18 @@ Checks out a different branch – makes your working directory look like the tre
 ```bash
 git checkout <branch> # switch to branch (does not modify the working directory, files are ready to be staged/committed)
 git checkout -b <branch> # create then switch to branch
-git checkout -b <branch> <startpoint> # create then switch to branch from a specific commit (default to HEAD)
+git checkout -b <branch> <commit-ish> # create then switch to branch from a specific commit (default to HEAD)
 git checkout -b <branch> origin/<branch> # create + switch to a new local branch + track a remote branch
 git checkout <feature_branch_on_remote> # if feature does not exist locally but exists on a remote, it is equals than the command above
 
 git checkout LICENSE # blow away all the changes since last commit
 git checkout HEAD LICENSE # specify a commit to rollback this file to
+
+# checkout the file from the last commit of a branch
+git checkout <branch> bin/gct-cli.exe
+
+# Add a branch w/o history
+git checkout --orphan binaries
 ```
 
 ### git reset
@@ -298,6 +316,8 @@ rebase conflicts
 git status
 # edit unmerged files
 git add file.txt # mark as resolved
+# At this point (or you selected edit as the rebase word, you can also make new commits)
+# touch newfile & git add --all & git commit -m "adding new file"
 git rebase --continue # --skip/--abort
 ```
 
@@ -381,6 +401,10 @@ git push --tags # push tags to remote
 Fetches all the objects that a remote version of your repository has that you do not yet so you can merge them into yours or simply inspect them.
 Fetching a branch means to get the branch’s head ref from a remote repository, to find out which objects are missing from the local object database, and to get them, too.
 
+```bash
+git fetch --prune # fetch + git remote prune <remote>
+```
+
 ### git pull
 
 Runs a `git fetch` then a `git merge FETCH_HEAD`.
@@ -394,6 +418,7 @@ See `pull.rebase`, `branch.<name>.rebase` and `branch.autoSetupRebase` in git-co
 Pushes all the objects that you have that a remote version does not yet have to that repository and advances its branches
 
 ```bash
+git push <remote> <branch>
 git push # push current branch to default remote
 git push -u <remote> <ref> # where ref/branch is the local branch to push, -u allows to start tracking the local ref with the remote
 git push <remote> --all # all branches
@@ -552,13 +577,44 @@ Use binary search to find the commit that introduced a bug
 
 Shows information about a git object, normally used to view commit information.
 
+```bash
+git show <object> # blob, commit, tag...
+```
+
 ### git ls-tree
 
 Shows a tree object, including the mode and name of each node and the SHA-1 value of the blob or tree that it points to. Can also be run recursively to see all subtrees as well.
 
+```bash
+git ls-tree <tree-ish> # list the object of a commit for instance
+git ls-tree <tree-ish> path
+```
+
 ### git cat-file
 
 Used to view the type of an object if you only have the SHA-1 value, or used to redirect contents of files or view raw information about any object.
+
+Can be used to see the signature of a commit or a tag :
+
+```bash
+git cat-file commit db60657
+git cat-file tag v1.0.0
+```
+
+If a commit is signed, it will contain :
+
+```text
+tree 494c031148f91083db105bcde287562bde846bfb
+parent 964a8dc14233f39a8fd4146ac9ebe02a577e1143
+author Julien Caillon <julien.caillon@truc.com> 1530694563 +0200
+committer Julien Caillon <julien.caillon@truc.com> 1530694563 +0200
+gpgsig -----BEGIN PGP SIGNATURE-----
+ Version: GnuPG v2
+	<HASH>
+ -----END PGP SIGNATURE-----
+
+commit message
+```
 
 ### git grep
 
@@ -590,6 +646,15 @@ git diff <branch1> <branch2>
 
 Located in `$GIT_DIR/hooks/*` (or `git config core.hooksPath`)
 
+`git config hooks.allownonascii true`
+
+allows you to use :
+
+```bash
+allownonascii=$(git config --bool hooks.allownonascii)
+if [ "$allownonascii" != "true" ] then
+```
+
 ### git archive
 
 Creates a tar or zip file of the contents of a single tree from your repository. Easiest way to export a snapshot of content from your repository.
@@ -617,6 +682,16 @@ Wrapper script to quickly run a web server with an interface into your repositor
 ### git-daemon
 
 Runs a simple, unauthenticated wrapper on the git-upload-pack program, used to provide efficient, anonymous and unencrypted fetch access to a Git repository.
+
+---
+
+## Git worflow
+
+Classic git workflow :
+
+https://nvie.com/posts/a-successful-git-branching-model/?
+
+![workflow](images/2018-07-04-09-58-28.png)
 
 ---
 
