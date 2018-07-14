@@ -61,6 +61,10 @@ cat .git/refs/heads/master
 # <commit_sha>
 cat .git/HEAD
 # ref: refs/heads/master
+cat .git/packed-refs
+# dd452f4ee5ee2d3860f211af5f4bf14372acb198 refs/remotes/origin/3.0.0/ft/issue2
+# sometimes, branches/tags/remotes are stored in the .git/packed-refs instead of the usual refs/ directory
+# this is for performances (1 file instead of 100), you can force pack with git pack-refs --all
 ```
 
 ### git config
@@ -86,6 +90,8 @@ git config --global commit.template ~/.gitmessage.txt
 git config --global commit.cleanup strip
 git config core.hooksPath ~/.githooks
 git config core.hooksPath C:/data/repo/_gitlab/GitHooks/hooks
+git config --global pull.rebase true # default the pull to fetch + rebase instead of merge
+git config --global rerere.enabled true # will remember the conflict resolution and replay them if encountered again
 git lol
 ```
 
@@ -186,6 +192,7 @@ git branch # list branches
 git branch -r # list all remote branches
 git branch -a -v # list all branches
 git branch -d <branch> # soft delete / -D for hard delete
+git push <remote> :<branch> # delete remote branch
 git branch -m <oldname> <newname> # rename branch
 git branch -a -v --no-merged # list unmerged branch
 ```
@@ -332,6 +339,30 @@ beware :
 
 Never rebase a public branch (e.g. master, release branch, shared dev branch...). You want to rebase ONTO a local (or single user) branch then merge fast-forward in the public branch! That way, you don't change the history on the public branch, you just fast-forward new commits.
 
+TODO :
+
+```bash
+if you go for the merge instead or rebase, force git not to use fast-forward when merging onto master, so you get a merge commit when mrging a feature branch, even if you could fast forward it
+
+git checkout master
+git merge --no-ff feature_branch
+
+Create the merge request
+git checkout feat
+git rebase -i HEAD~x (squash them)
+git push -f
+(pull request has been updated, you only see 1 commit now)
+# then integrate the changes of master into the feat
+git rebase master
+# cool, now we can fast forward on master
+# you can just do it on the interface of gitlab
+# or do it here
+git push -f # push the new changes on feat
+git checkout master
+git merge -ff feat
+# at this point, the pull request should be closed!
+```
+
 #### git merge/rebase with confidence
 
 Use the savepoint pattern described here to merge without the fear of losing things.
@@ -394,6 +425,7 @@ git checkout <tag>
 git tag -a <tag> -m "description" # create a new tag
 git tag <tag> # create a new tag
 git push --tags # push tags to remote
+git push origin :tagname # delete a tag
 ```
 
 ### git fetch
@@ -439,6 +471,14 @@ git remote rename <oldname> <name>
 git remote -v # list remotes
 git remote prune origin # clean up (in your local repo) all deleted remote branches
 git remote show origin # show which branches are tracked for the given remote
+```
+
+Create a local (on the local filesystem) repo :
+
+```bash
+git init --bare remote.git
+# clone it :
+git clone remote.git local
 ```
 
 ### git submodule
@@ -654,6 +694,11 @@ allows you to use :
 allownonascii=$(git config --bool hooks.allownonascii)
 if [ "$allownonascii" != "true" ] then
 ```
+
+Interesting reading : 
+
+- [in french, sry](https://delicious-insights.com/fr/articles/git-hooks/#c-t-client-machine-locale)
+- https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks
 
 ### git archive
 

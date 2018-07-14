@@ -21,7 +21,13 @@ dotnet sln remove **/*.csproj
 
 ### install build tools
 
+You can simply install the latest visual studio version (2017 atm).
+
+Or, if you don't want to install everything but just build with `ght-cli/build.bat`, you can install msbuild tools :
+
 https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2017
+
+With the following options :
 
 - MsBuild tools
 - .Net Core build tools
