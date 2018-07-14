@@ -1,10 +1,15 @@
 # Msbuild
 
-https://msdn.microsoft.com/en-us/library/dd393573.aspx
+https://msdn.microsoft.com/en-us/library/dd393574.aspx
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>  
 <Project ToolsVersion="12.0" DefaultTargets="Build"  xmlns="http://schemas.microsoft.com/developer/msbuild/2003">  
+```
+
+```xml
+Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp'"
+Condition="'$(TargetFrameworkIdentifier)' != '.NETFramework'"
 ```
 
 ## Target and a Task
@@ -20,11 +25,11 @@ https://msdn.microsoft.com/en-us/library/dd393573.aspx
 </Target>  
 ```
 
-# building Task
+## building Task
 
 msbuild buildapp.csproj /t:HelloWorld  
 
-# Build Properties
+## Build Properties
 
 ```xml
 <PropertyGroup>  
@@ -43,7 +48,7 @@ https://msdn.microsoft.com/en-us/library/ms164309.aspx
 Reference environment variables :
 https://msdn.microsoft.com/en-us/library/ms171459.aspx
 
-# Examining a Property Value
+## Examining a Property Value
 
 ```xml
 <Target Name="HelloWorld">  
@@ -52,27 +57,196 @@ https://msdn.microsoft.com/en-us/library/ms171459.aspx
 </Target>
 ```
 
-# Conditional Properties
+## Conditional Properties
 
 ```xml
 <Configuration   Condition=" '$(Configuration)' == '' ">Debug</Configuration>  
 ```
 
-# Settings properties in the cmd line
+## Conditional construct
+
+```xml
+<Choose>  
+    <When Condition=" '$(Configuration)'=='Debug' ">  
+        <PropertyGroup>  
+            <DebugSymbols>true</DebugSymbols>  
+            <DebugType>full</DebugType>  
+            <Optimize>false</Optimize>  
+            <OutputPath>.\bin\Debug\</OutputPath>  
+            <DefineConstants>DEBUG;TRACE</DefineConstants>  
+        </PropertyGroup>  
+        <ItemGroup>  
+            <Compile Include="UnitTesting\*.cs" />  
+            <Reference Include="NUnit.dll" />  
+        </ItemGroup>  
+    </When>  
+    <When Condition=" '$(Configuration)'=='retail' ">  
+        <PropertyGroup>  
+            <DebugSymbols>false</DebugSymbols>  
+            <Optimize>true</Optimize>  
+            <OutputPath>.\bin\Release\</OutputPath>  
+            <DefineConstants>TRACE</DefineConstants>  
+        </PropertyGroup>  
+    </When>  
+</Choose>  
+```
+
+## Settings properties in the cmd line
 
 msbuild buildapp.csproj /t:HelloWorld /p:Configuration=Release  
 
-# Special chars
+## Special chars
 
 Certain characters have special meaning in MSBuild project files. Examples of these characters include semicolons (;) and asterisks (*). In order to use these special characters as literals in a project file, they must be specified by using the syntax %xx, where xx represents the ASCII hexadecimal value of the character.
 
 <Message Text="%24(Configuration) is %22$(Configuration)%22" />  
 
-# Build Items
+## Build Items
 
 ```xml
 <ItemGroup>  
     <Compile Include="Program.cs" />  
     <Compile Include="Properties\AssemblyInfo.cs" />  
 </ItemGroup>  
+```
+
+## Typical project file
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>uhttpsharp</AssemblyName>
+    <RootNamespace>$(AssemblyName)</RootNamespace>
+    <!-- this will be the product name-->
+    <Product>µHttpSharp</Product>
+    <!-- this will be the file description -->
+    <AssemblyTitle>$(Product) - a micro http server</AssemblyTitle>
+    <Authors>az;azd</Authors>
+    <Company>Noyacode</Company>
+    <!-- Exe or Library-->
+    <OutputType>Library</OutputType>
+    <!-- The file version will be VersionPrefix and the Product version will be VersionPrefix-VersionSuffix -->
+    <VersionPrefix>1.0.0.1</VersionPrefix>
+    <VersionSuffix>alpha</VersionSuffix>
+    <Title>$(AssemblyTitle)</Title>
+    <Copyright>Copyright (c) 2018</Copyright>
+    <Description>A very lightweight &amp; simple embedded http server for c#</Description>
+    <Authors>jcailon,shani.elh,Joe White, Hüseyin Uslu</Authors>
+    <NeutralLanguage>en-GB</NeutralLanguage>
+    <ApplicationIcon></ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup>
+    <TargetFrameworks Condition=" '$(TargetFrameworks)'=='' ">net461;netcoreapp2.0</TargetFrameworks>
+    <!-- The operating system you are building for. Valid values are "Any CPU", "x86", and "x64" -->
+    <Platform Condition=" '$(Platform)' == '' ">Any Cpu</Platform>
+    <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">.\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
+    <DebugSymbols>true</DebugSymbols>
+    <!-- Need to be full if you want .pdb files to work for .net framework <= 4.7.1, otherwise portable is ok -->
+    <!-- pdbonly = you get line numbers, full = you can attach the debugger! so use pdbonly for releases -->
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Label="Special stuff">
+    <!-- Specifies the path of the file that is used to generate external User Account Control (UAC) manifest information -->
+    <ApplicationManifest></ApplicationManifest>
+    <!-- Path to the strong name key file (.snk) -->
+    <AssemblyOriginatorKeyFile></AssemblyOriginatorKeyFile>
+    <!-- To use with #if... -->
+    <DefineConstants>DEBUG;MACHIN</DefineConstants>
+    <!-- generate an xml file documentation -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!-- Specify the class that contains the main method -->
+    <StartupObject></StartupObject>
+    <!-- stop on compiler warning -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <Target Name="OutputDebug">
+    <Message Text="CscToolPath is $(CscToolPath)" />
+    <Message Text="MSBuildToolsPath is $(MSBuildToolsPath)" />
+  </Target>
+  <PropertyGroup Label="Nuget">
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageId>Noyacode.$(AssemblyName)</PackageId>
+    <PackageVersionPrefix>$(VersionPrefix)</PackageVersionPrefix>
+    <PackageVersionSuffix>$(VersionSuffix)</PackageVersionSuffix>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageLicenseUrl>https://github.com/jcaillon/uHttpSharp/blob/master/LICENSE.txt</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/jcaillon/uHttpSharp</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/jcaillon/uHttpSharp.git</RepositoryUrl>
+    <PackageIconUrl></PackageIconUrl>
+    <PackageReleaseNotes>Initial release for dotnet standard</PackageReleaseNotes>
+    <PackageTags>http server microframeworks</PackageTags>
+    <PackageOutputPath>$(OutputPath)</PackageOutputPath>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>   
+  </PropertyGroup>
+  <Target Name="CopyPackage" AfterTargets="Pack">
+    <Copy SourceFiles="$(OutputPath)$(PackageId).$(PackageVersion).nupkg" DestinationFolder="$(SolutionDir)\bin" />
+  </Target>
+<Project>
+```
+
+## app.manifest example
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<asmv1:assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1" xmlns:asmv1="urn:schemas-microsoft-com:asm.v1" xmlns:asmv2="urn:schemas-microsoft-com:asm.v2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <assemblyIdentity version="1.0.0.0" name="MyApplication.app"/>
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
+    <security>
+      <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
+        <!-- UAC Manifest Options
+            If you want to change the Windows User Account Control level replace the 
+            requestedExecutionLevel node with one of the following.
+
+        <requestedExecutionLevel  level="asInvoker" uiAccess="false" />
+        <requestedExecutionLevel  level="requireAdministrator" uiAccess="false" />
+        <requestedExecutionLevel  level="highestAvailable" uiAccess="false" />
+
+            Specifying requestedExecutionLevel node will disable file and registry virtualization.
+            If you want to utilize File and Registry Virtualization for backward 
+            compatibility then delete the requestedExecutionLevel node.
+        -->
+        <requestedExecutionLevel level="highestAvailable" uiAccess="false" />
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+
+  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+    <application>
+      <!-- A list of all Windows versions that this application is designed to work with. 
+      Windows will automatically select the most compatible environment.-->
+
+      <!-- If your application is designed to work with Windows Vista, uncomment the following supportedOS node-->
+      <!--<supportedOS Id="{e2011457-1546-43c5-a5fe-008deee3d3f0}"></supportedOS>-->
+
+      <!-- If your application is designed to work with Windows 7, uncomment the following supportedOS node-->
+      <!--<supportedOS Id="{35138b9a-5d96-4fbd-8e2d-a2440225f93a}"/>-->
+
+      <!-- If your application is designed to work with Windows 8, uncomment the following supportedOS node-->
+      <!--<supportedOS Id="{4a2f28e3-53b9-4441-ba9c-d69d4a4a6e38}"></supportedOS>-->
+
+      <!-- If your application is designed to work with Windows 8.1, uncomment the following supportedOS node-->
+      <!--<supportedOS Id="{1f676c76-80e1-4239-95bb-83d0f6d0da78}"/>-->
+
+    </application>
+  </compatibility>
+
+  <!-- Enable themes for Windows common controls and dialogs (Windows XP and later) -->
+  <!-- <dependency>
+    <dependentAssembly>
+      <assemblyIdentity
+          type="win32"
+          name="Microsoft.Windows.Common-Controls"
+          version="6.0.0.0"
+          processorArchitecture="*"
+          publicKeyToken="6595b64144ccf1df"
+          language="*"
+        />
+    </dependentAssembly>
+  </dependency>-->
+
+</asmv1:assembly>
 ```
