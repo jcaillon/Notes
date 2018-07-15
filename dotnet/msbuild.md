@@ -1,10 +1,11 @@
 # Msbuild
 
+https://docs.microsoft.com/en-us/visualstudio/msbuild/msbuild
 https://msdn.microsoft.com/en-us/library/dd393574.aspx
 
 ```xml
-<?xml version="1.0" encoding="utf-8"?>  
-<Project ToolsVersion="12.0" DefaultTargets="Build"  xmlns="http://schemas.microsoft.com/developer/msbuild/2003">  
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build"  xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 ```
 
 ```xml
@@ -15,31 +16,31 @@ Condition="'$(TargetFrameworkIdentifier)' != '.NETFramework'"
 ## Target and a Task
 
 ```xml
-<Target Name="BeforeBuild">  
-</Target>  
-<Target Name="AfterBuild">  
-</Target>  
+<Target Name="BeforeBuild">
+</Target>
+<Target Name="AfterBuild">
+</Target>
 
-<Target Name="HelloWorld">  
-  <Message Text="Hello"></Message>  <Message Text="World"></Message>  
-</Target>  
+<Target Name="HelloWorld">
+  <Message Text="Hello"></Message>  <Message Text="World"></Message>
+</Target>
 ```
 
 ## building Task
 
-msbuild buildapp.csproj /t:HelloWorld  
+msbuild buildapp.csproj /t:HelloWorld
 
 ## Build Properties
 
 ```xml
-<PropertyGroup>  
-...  
-  <ProductVersion>10.0.11107</ProductVersion>  
-  <SchemaVersion>2.0</SchemaVersion>  
-  <ProjectGuid>{30E3C9D5-FD86-4691-A331-80EA5BA7E571}</ProjectGuid>  
-  <OutputType>WinExe</OutputType>  
-...  
-</PropertyGroup>  
+<PropertyGroup>
+...
+  <ProductVersion>10.0.11107</ProductVersion>
+  <SchemaVersion>2.0</SchemaVersion>
+  <ProjectGuid>{30E3C9D5-FD86-4691-A331-80EA5BA7E571}</ProjectGuid>
+  <OutputType>WinExe</OutputType>
+...
+</PropertyGroup>
 ```
 
 Reserved Properties
@@ -51,109 +52,146 @@ https://msdn.microsoft.com/en-us/library/ms171459.aspx
 ## Examining a Property Value
 
 ```xml
-<Target Name="HelloWorld">  
-  <Message Text="Configuration is $(Configuration)" />  
-  <Message Text="MSBuildToolsPath is $(MSBuildToolsPath)" />  
+<Target Name="HelloWorld">
+  <Message Text="Configuration is $(Configuration)" />
+  <Message Text="MSBuildToolsPath is $(MSBuildToolsPath)" />
 </Target>
 ```
 
 ## Conditional Properties
 
 ```xml
-<Configuration   Condition=" '$(Configuration)' == '' ">Debug</Configuration>  
+<Configuration   Condition=" '$(Configuration)' == '' ">Debug</Configuration>
 ```
 
 ## Conditional construct
 
 ```xml
-<Choose>  
-    <When Condition=" '$(Configuration)'=='Debug' ">  
-        <PropertyGroup>  
-            <DebugSymbols>true</DebugSymbols>  
-            <DebugType>full</DebugType>  
-            <Optimize>false</Optimize>  
-            <OutputPath>.\bin\Debug\</OutputPath>  
-            <DefineConstants>DEBUG;TRACE</DefineConstants>  
-        </PropertyGroup>  
-        <ItemGroup>  
-            <Compile Include="UnitTesting\*.cs" />  
-            <Reference Include="NUnit.dll" />  
-        </ItemGroup>  
-    </When>  
-    <When Condition=" '$(Configuration)'=='retail' ">  
-        <PropertyGroup>  
-            <DebugSymbols>false</DebugSymbols>  
-            <Optimize>true</Optimize>  
-            <OutputPath>.\bin\Release\</OutputPath>  
-            <DefineConstants>TRACE</DefineConstants>  
-        </PropertyGroup>  
-    </When>  
-</Choose>  
+<Choose>
+    <When Condition=" '$(Configuration)'=='Debug' ">
+        <PropertyGroup>
+            <DebugSymbols>true</DebugSymbols>
+            <DebugType>full</DebugType>
+            <Optimize>false</Optimize>
+            <OutputPath>.\bin\Debug\</OutputPath>
+            <DefineConstants>DEBUG;TRACE</DefineConstants>
+        </PropertyGroup>
+        <ItemGroup>
+            <Compile Include="UnitTesting\*.cs" />
+            <Reference Include="NUnit.dll" />
+        </ItemGroup>
+    </When>
+    <When Condition=" '$(Configuration)'=='retail' ">
+        <PropertyGroup>
+            <DebugSymbols>false</DebugSymbols>
+            <Optimize>true</Optimize>
+            <OutputPath>.\bin\Release\</OutputPath>
+            <DefineConstants>TRACE</DefineConstants>
+        </PropertyGroup>
+    </When>
+</Choose>
 ```
 
 ## Settings properties in the cmd line
 
-msbuild buildapp.csproj /t:HelloWorld /p:Configuration=Release  
+msbuild buildapp.csproj /t:HelloWorld /p:Configuration=Release
 
 ## Special chars
 
 Certain characters have special meaning in MSBuild project files. Examples of these characters include semicolons (;) and asterisks (*). In order to use these special characters as literals in a project file, they must be specified by using the syntax %xx, where xx represents the ASCII hexadecimal value of the character.
 
-<Message Text="%24(Configuration) is %22$(Configuration)%22" />  
+<Message Text="%24(Configuration) is %22$(Configuration)%22" />
 
 ## Build Items
 
 ```xml
-<ItemGroup>  
-    <Compile Include="Program.cs" />  
-    <Compile Include="Properties\AssemblyInfo.cs" />  
-</ItemGroup>  
+<ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+</ItemGroup>
+```
+
+## Zip directory
+
+```xml
+  <Target Name="ZipOutputPath" AfterTargets="Build">
+      <ZipDirectory
+          SourceDirectory="$(OutputPath)"
+          Overwrite="true"
+          DestinationFile="$(MSBuildProjectDirectory)\output.zip">
+      />
+  </Target>
 ```
 
 ## Typical project file
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
+
+  <PropertyGroup  Label="Basic info">
+    <!-- Exe or Library-->
+    <OutputType>Library</OutputType>
     <AssemblyName>uhttpsharp</AssemblyName>
     <RootNamespace>$(AssemblyName)</RootNamespace>
+    <TargetName>$(AssemblyName)</TargetName>
+    <!-- Assembly.GetExecutingAssembly().GetName().Version = $(Version) but completed if necessary to make a 4 digit version and without what is after the dash -->
+    <!-- FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion = $(Version) -->
+    <Version>1.0.0-rc</Version>
+    <!-- FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion = $(FileVersion) -->
+    <FileVersion>$(VersionPrefix)</FileVersion>
     <!-- this will be the product name-->
     <Product>µHttpSharp</Product>
     <!-- this will be the file description -->
     <AssemblyTitle>$(Product) - a micro http server</AssemblyTitle>
-    <Authors>az;azd</Authors>
-    <Company>Noyacode</Company>
-    <!-- Exe or Library-->
-    <OutputType>Library</OutputType>
-    <!-- The file version will be VersionPrefix and the Product version will be VersionPrefix-VersionSuffix -->
-    <VersionPrefix>1.0.0.1</VersionPrefix>
-    <VersionSuffix>alpha</VersionSuffix>
-    <Title>$(AssemblyTitle)</Title>
     <Copyright>Copyright (c) 2018</Copyright>
-    <Description>A very lightweight &amp; simple embedded http server for c#</Description>
-    <Authors>jcailon,shani.elh,Joe White, Hüseyin Uslu</Authors>
-    <NeutralLanguage>en-GB</NeutralLanguage>
+    <!-- The file version will be VersionPrefix and the Product version will be VersionPrefix-VersionSuffix -->
     <ApplicationIcon></ApplicationIcon>
   </PropertyGroup>
-  <PropertyGroup>
-    <TargetFrameworks Condition=" '$(TargetFrameworks)'=='' ">net461;netcoreapp2.0</TargetFrameworks>
-    <!-- The operating system you are building for. Valid values are "Any CPU", "x86", and "x64" -->
-    <Platform Condition=" '$(Platform)' == '' ">Any Cpu</Platform>
-    <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">.\</SolutionDir>
-    <RestorePackages>true</RestorePackages>
-    <DebugSymbols>true</DebugSymbols>
-    <!-- Need to be full if you want .pdb files to work for .net framework <= 4.7.1, otherwise portable is ok -->
-    <!-- pdbonly = you get line numbers, full = you can attach the debugger! so use pdbonly for releases -->
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+  <PropertyGroup Label="Package info basic">
+    <Title>$(AssemblyTitle)</Title>
+    <Description>A very lightweight &amp; simple embedded http server for c#</Description>
+    <Company>Noyacode</Company>
+    <Authors>jcailon,shani.elh,Joe White, Hüseyin Uslu</Authors>
   </PropertyGroup>
-  <PropertyGroup Label="Special stuff">
+
+  <PropertyGroup Label="Package info">
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageId>$(Company).$(AssemblyName)</PackageId>
+    <PackageVersionPrefix>$(VersionPrefix)</PackageVersionPrefix>
+    <PackageVersionSuffix>$(VersionSuffix)</PackageVersionSuffix>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageLicenseUrl>https://github.com/jcaillon/uHttpSharp/blob/master/LICENSE.txt</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/jcaillon/uHttpSharp</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/jcaillon/uHttpSharp.git</RepositoryUrl>
+    <PackageIconUrl></PackageIconUrl>
+    <PackageReleaseNotes>Initial release for dotnet standard</PackageReleaseNotes>
+    <PackageTags>http server microframeworks</PackageTags>
+    <PackageOutputPath>$(OutputPath)</PackageOutputPath>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Compilation info">
+    <!-- https://docs.microsoft.com/en-us/dotnet/standard/frameworks -->
+    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
+    <!-- The operating system you are building for. Valid values are "Any CPU", "x86", and "x64" -->
+    <Platform>Any Cpu</Platform>
+    <Configuration>Release</Configuration>
+    <SolutionDir Condition=" $(SolutionDir) == ''">.\</SolutionDir>
+    <DebugSymbols>true</DebugSymbols>
+    <Optimize Condition=" '$(Configuration)' == 'Release' ">true</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Extra stuff">
+    <!-- fallback language for language resources -->
+    <NeutralLanguage>en-GB</NeutralLanguage>
     <!-- Specifies the path of the file that is used to generate external User Account Control (UAC) manifest information -->
     <ApplicationManifest></ApplicationManifest>
-    <!-- Path to the strong name key file (.snk) -->
+    <!-- Path to the strong name key file (.snk) (you need the 3 following props to sign -->
     <AssemblyOriginatorKeyFile></AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
+    <PublicSign Condition="'$(OS)' != 'Windows_NT'">true</PublicSign>
     <!-- To use with #if... -->
     <DefineConstants>DEBUG;MACHIN</DefineConstants>
     <!-- generate an xml file documentation -->
@@ -162,30 +200,37 @@ Certain characters have special meaning in MSBuild project files. Examples of th
     <StartupObject></StartupObject>
     <!-- stop on compiler warning -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- throw an exception on overflow instead of failing quietly -->
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
-  <Target Name="OutputDebug">
-    <Message Text="CscToolPath is $(CscToolPath)" />
-    <Message Text="MSBuildToolsPath is $(MSBuildToolsPath)" />
-  </Target>
-  <PropertyGroup Label="Nuget">
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <PackageId>Noyacode.$(AssemblyName)</PackageId>
-    <PackageVersionPrefix>$(VersionPrefix)</PackageVersionPrefix>
-    <PackageVersionSuffix>$(VersionSuffix)</PackageVersionSuffix>
-    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageLicenseUrl>https://github.com/jcaillon/uHttpSharp/blob/master/LICENSE.txt</PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/jcaillon/uHttpSharp</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/jcaillon/uHttpSharp.git</RepositoryUrl>
-    <PackageIconUrl></PackageIconUrl>
-    <PackageReleaseNotes>Initial release for dotnet standard</PackageReleaseNotes>
-    <PackageTags>http server microframeworks</PackageTags>
-    <PackageOutputPath>$(OutputPath)</PackageOutputPath>
-    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>   
-  </PropertyGroup>
-  <Target Name="CopyPackage" AfterTargets="Pack">
-    <Copy SourceFiles="$(OutputPath)$(PackageId).$(PackageVersion).nupkg" DestinationFolder="$(SolutionDir)\bin" />
-  </Target>
-<Project>
+
+  <!-- DebugType -->
+  <!-- Need to be full if you want .pdb files to work for .net framework <= 4.7.1, otherwise portable is ok -->
+  <!-- pdbonly = you get line numbers, full = you can attach the debugger! so use pdbonly for releases, none/embedded/portable -->
+  <!-- portable = new .pdb format to use since dotnet and >= 4.7.1, embedded = same as portable excepct the .pdb is inside the .dll -->
+  <Choose>
+    <When Condition="$(TargetFramework.Contains('netstandard')) OR $(TargetFramework.Contains('netcoreapp'))">
+      <PropertyGroup>
+        <DebugType>embedded</DebugType>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <Choose>
+        <When Condition=" '$(Configuration)'=='Debug' ">
+          <PropertyGroup>
+            <DebugType>full</DebugType>
+          </PropertyGroup>
+        </When>
+        <Otherwise>
+          <PropertyGroup>
+            <DebugType>pdbonly</DebugType>
+          </PropertyGroup>
+        </Otherwise>
+      </Choose>
+    </Otherwise>
+  </Choose>
+</Project>
 ```
 
 ## app.manifest example
@@ -198,7 +243,7 @@ Certain characters have special meaning in MSBuild project files. Examples of th
     <security>
       <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
         <!-- UAC Manifest Options
-            If you want to change the Windows User Account Control level replace the 
+            If you want to change the Windows User Account Control level replace the
             requestedExecutionLevel node with one of the following.
 
         <requestedExecutionLevel  level="asInvoker" uiAccess="false" />
@@ -206,7 +251,7 @@ Certain characters have special meaning in MSBuild project files. Examples of th
         <requestedExecutionLevel  level="highestAvailable" uiAccess="false" />
 
             Specifying requestedExecutionLevel node will disable file and registry virtualization.
-            If you want to utilize File and Registry Virtualization for backward 
+            If you want to utilize File and Registry Virtualization for backward
             compatibility then delete the requestedExecutionLevel node.
         -->
         <requestedExecutionLevel level="highestAvailable" uiAccess="false" />
@@ -216,7 +261,7 @@ Certain characters have special meaning in MSBuild project files. Examples of th
 
   <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
     <application>
-      <!-- A list of all Windows versions that this application is designed to work with. 
+      <!-- A list of all Windows versions that this application is designed to work with.
       Windows will automatically select the most compatible environment.-->
 
       <!-- If your application is designed to work with Windows Vista, uncomment the following supportedOS node-->

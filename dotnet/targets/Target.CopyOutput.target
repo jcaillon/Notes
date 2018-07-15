@@ -6,15 +6,19 @@
     <ReleaseBinPath>$(ProjectDir)bin\$(Platform)\$(TargetFramework)\</ReleaseBinPath>
   </PropertyGroup>
 
-
   <!-- Copy the output files to the target directory -->
-  <Target Name="CopyOutput" AfterTargets="CoreBuild">
+  <Target 
+    Name="CopyOutputNETFramework" 
+    AfterTargets="CoreBuild" 
+    Condition="'$(TargetFrameworkIdentifier)'=='.NETFramework'">
     
     <!-- list the outputfiles which are : .exe/.dll,.pdb -->
     <ItemGroup>
       <OutputFiles Include="@(IntermediateAssembly)"></OutputFiles>
       <OutputFiles Include="@(_DebugSymbolsIntermediatePath)"></OutputFiles>
     </ItemGroup>
+
+    <!-- <RemoveDir Directories="$(ReleaseBinPath)" /> -->
 
     <!-- copy the files to the release path -->
     <Copy 
@@ -28,20 +32,31 @@
     <Message Importance="high" Text="=========================="/>
     <Message Importance="high" Text="[INFO] Copying output : %0A   @(OutputFiles->'%(Fullpath)', '%0A   ')"/>
     <Message Importance="high" Text="   -> copied in $([System.IO.Path]::GetFullPath('$(ReleaseBinPath)'))"/>
-
-    <PropertyGroup>
-      <CopyOutputDone>true</CopyOutputDone>
-    </PropertyGroup>
   </Target>
 
 
-<!--   <ItemGroup Condition=" '$(TargetFramework)'=='netcoreapp2.0' ">
-    <None Update="@(OutputFiles)">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup> -->
-  <PropertyGroup Condition=" '$(EmbedResources)'=='false' ">
+  <!-- Case of a dotnet core application, we want to change the publish directory instead -->
+  <PropertyGroup Condition="$(TargetFramework.Contains('netstandard')) OR $(TargetFramework.Contains('netcoreapp'))">
     <PublishDir>$(ReleaseBinPath)</PublishDir>
   </PropertyGroup>
+
+  <Target 
+    Name="CopyOutputNETCore" 
+    AfterTargets="CoreBuild"
+    Condition="'$(TargetFrameworkIdentifier)'!='.NETFramework'">
+
+    <!-- <RemoveDir Directories="$(ReleaseBinPath)" /> -->
+
+    <Copy 
+      SourceFiles="@(OutputFiles)"
+      Condition="Exists('%(Fullpath)')"
+      DestinationFolder="$(ReleaseBinPath)"
+      OverwriteReadOnlyFiles="true"
+      SkipUnchangedFiles="false" />
+      
+    <Message Importance="high" Text="=========================="/>
+    <Message Importance="high" Text="[INFO] Copying output2 : %0A   @(OutputFiles->'%(Fullpath)', '%0A   ')"/>
+    <Message Importance="high" Text="   -> copied in $([System.IO.Path]::GetFullPath('$(ReleaseBinPath)'))"/>
+  </Target>
 
 </Project>

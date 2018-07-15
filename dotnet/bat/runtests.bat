@@ -32,7 +32,7 @@ for /f "delims=" %%G in ('dir /s /b *Test.csproj') do (
 :DONE
 echo.
 echo.=========================
-echo.[%time:~0,8% INFO] DONE
+echo.[%time:~0,8% INFO] TESTS DONE
 
 if "%IS_CI_BUILD%"=="false" (
 	pause
@@ -55,7 +55,7 @@ REM - -------------------------------------
 :ENDINERROR
 
 echo.=========================
-echo.[%time:~0,8% ERRO] ERROR!!! ERRORLEVEL = %errorlevel%
+echo.[%time:~0,8% ERRO] TESTS ENDED IN ERROR, ERRORLEVEL = %errorlevel%
 
 if "%IS_CI_BUILD%"=="false" (
 	pause

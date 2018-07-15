@@ -4,6 +4,8 @@
 
 ```cmd
 msbuild /t:pack
+nuget pack
+dotnet pack
 ```
 
 ## Publish it
@@ -15,29 +17,28 @@ nuget push <pack>.nupkg <APIKEY> -NonInteractive -ForceEnglishOutput -Source htt
 ## Properties in the csproj file
 
 ```xml
-  <PropertyGroup Label="Nuget">
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <PackageId>$(AssemblyName)Test</PackageId>
-    <PackageVersionPrefix>$(VersionPrefix)</PackageVersionPrefix>
-    <PackageVersionSuffix>$(VersionSuffix)</PackageVersionSuffix>
-    <Title>Nuget package $(AssemblyName)</Title>
-    <Description>This package is...</Description>
-    <Authors>jcailon,authro2</Authors>
-    <Company>your_company</Company>
-    <Copyright>Copyright (c) 2018 - Julien Caillon - GNU General Public License v3</Copyright>
-    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageLicenseUrl>https://www.gnu.org/licenses/gpl-3.0.txt</PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/jcaillon/uHttpSharp</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/jcaillon/uHttpSharp.git</RepositoryUrl>
-    <PackageIconUrl></PackageIconUrl>
-    <PackageReleaseNotes></PackageReleaseNotes>
-    <PackageTags>tag1 tag2 space delimited</PackageTags>
-    <PackageOutputPath>$(OutputPath)</PackageOutputPath>
-    <IncludeSymbols>false</IncludeSymbols>
-    <IncludeSource>false</IncludeSource>
-    <!-- The prop below allows to pack the .pdb files along with the .dll -->
-    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
-  </PropertyGroup>
+<PropertyGroup Label="Package info basic">
+  <Title>$(AssemblyTitle)</Title>
+  <Description>A very lightweight &amp; simple embedded http server for c#</Description>
+  <Company>Noyacode</Company>
+  <Authors>jcailon,shani.elh,Joe White, Hüseyin Uslu</Authors>
+</PropertyGroup>
+
+<PropertyGroup Label="Package info">
+  <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  <PackageId>$(Company).$(AssemblyName)</PackageId>
+  <PackageVersion>$(Version)</PackageVersion>
+  <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+  <PackageLicenseUrl>https://github.com/jcaillon/uHttpSharp/blob/master/LICENSE.txt</PackageLicenseUrl>
+  <PackageProjectUrl>https://github.com/jcaillon/uHttpSharp</PackageProjectUrl>
+  <RepositoryType>git</RepositoryType>
+  <RepositoryUrl>https://github.com/jcaillon/uHttpSharp.git</RepositoryUrl>
+  <PackageIconUrl>https://raw.githubusercontent.com/jcaillon/uHttpSharp/master/.docs/project_logo.png</PackageIconUrl>
+  <PackageReleaseNotes>Initial release for dotnet standard</PackageReleaseNotes>
+  <PackageTags>http server microframeworks</PackageTags>
+  <PackageOutputPath>$(OutputPath)</PackageOutputPath>
+  <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>   
+</PropertyGroup>
 ```
 
 ## Copy a specific file in the nuget package

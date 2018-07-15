@@ -1,14 +1,14 @@
 @if not defined _echo echo off
 setlocal enabledelayedexpansion
 
+REM on CI, the version built will be replaced by the tag name instead of taking the version from csproj
 REM if PROJECT_PATH is empty, we use the solution
-set PROJECT_PATH=GitPolicyAgentServer\GitPolicyAgentServer.csproj
-set DEFAULT_VERSION=0.0.1
-set "VERSION_SUFFIX="
+if "%PROJECT_PATH%"=="" set "PROJECT_PATH=uHttpSharp\uHttpSharp.csproj"
+if "%CUSTOM_BUILD_PARAMS%"=="" set "CUSTOM_BUILD_PARAMS=/p:ZipRelease=true"
 REM set below to false if you don't want to change the target framework on build
-set CHANGE_DEFAULT_TARGET=true
-set TARGETED_FRAMEWORKS=(netcoreapp2.0 net461)
-set TTYPE=Publish
+if "%CHANGE_DEFAULT_TARGETFRAMEWORK%"=="" set "CHANGE_DEFAULT_TARGETFRAMEWORK=false"
+if "%TARGETED_FRAMEWORKS%"=="" set TARGETED_FRAMEWORKS=(netcoreapp2.0 net461)
+if "%MSBUILD_DEFAULT_TARGET%"=="" set "MSBUILD_DEFAULT_TARGET=Pack"
 
 REM https://github.com/Microsoft/msbuild/wiki/MSBuild-Tips-&-Tricks
 
@@ -33,8 +33,11 @@ if not "%VERSION_TO_BUILD%"=="" set IS_TAG_BUILD=true
 REM @@@@@@@@@@@@@@
 REM What is the version we are building?
 set VERSION_TO_BUILD=%CI_COMMIT_TAG%
-if "%VERSION_TO_BUILD%"=="" set VERSION_TO_BUILD=%DEFAULT_VERSION%
-IF "%VERSION_TO_BUILD:~0,1%"=="v" set "VERSION_TO_BUILD=%VERSION_TO_BUILD:~1%"
+if not "%VERSION_TO_BUILD%"=="" (
+	if "%VERSION_TO_BUILD:~0,1%"=="v" (
+		set "VERSION_TO_BUILD=%VERSION_TO_BUILD:~1%"
+	)
+)
 
 REM @@@@@@@@@@@@@@
 REM Verbosity
@@ -60,15 +63,32 @@ echo.[%time:~0,8% INFO] COMMIT TAG : %CI_COMMIT_TAG%
 echo.[%time:~0,8% INFO] VERBOSITY : %MSBUILD_VERBOSITY%
 echo.[%time:~0,8% INFO] SOLUTION : %SOLUTION_NAME%
 echo.[%time:~0,8% INFO] PROJECT PATH : %PROJECT_PATH%
-echo.
-
 
 REM @@@@@@@@@@@@@@
 REM Actual Build
 
-if "%CHANGE_DEFAULT_TARGET%"=="true" (
+echo.
+echo.=========================
+echo.[%time:~0,8% INFO] Restoring packages
+
+
+set ADD_RESTORE=false
+where nuget 1>nul 2>nul
+if "%ERRORLEVEL%"=="0" (
+	echo.[%time:~0,8% INFO] Nuget found
+	nuget restore %SOLUTION_NAME% -Recursive -NonInteractive
+	if not "!ERRORLEVEL!"=="0" (
+		set ADD_RESTORE=true
+	)
+) else (
+	echo.[%time:~0,8% INFO] Nuget not found in PATH, will add Restore to msbuild target
+	set ADD_RESTORE=true
+)
+
+
+
+if "%CHANGE_DEFAULT_TARGETFRAMEWORK%"=="true" (
 	for %%i in %TARGETED_FRAMEWORKS% do (
-		echo.[%time:~0,8% INFO] Target is %%i
 		Call :BUILD_ONE "%%i" "%ADD_RESTORE%"
 		if not "!ERRORLEVEL!"=="0" (
 			GOTO ENDINERROR
@@ -81,9 +101,10 @@ if "%CHANGE_DEFAULT_TARGET%"=="true" (
 	)
 )
 
+
 :DONE
 echo.=========================
-echo.[%time:~0,8% INFO] DONE
+echo.[%time:~0,8% INFO] BUILD DONE
 
 if "%IS_CI_BUILD%"=="false" (
 	pause
@@ -106,7 +127,7 @@ REM - -------------------------------------
 :ENDINERROR
 
 echo.=========================
-echo.[%time:~0,8% ERRO] ERROR!!! ERRORLEVEL = %errorlevel%
+echo.[%time:~0,8% ERRO] BUILD ENDED IN ERROR, ERRORLEVEL = %errorlevel%
 
 if "%IS_CI_BUILD%"=="false" (
 	pause
@@ -123,58 +144,36 @@ REM - %2: need restore
 REM - -------------------------------------
 :BUILD_ONE
 
+set "INPUT_FRAMEWORK=%~1"
+IF "%INPUT_FRAMEWORK%"=="" (
+	set "INPUT_FRAMEWORK=default"	
+)
+
 echo.
 echo.=========================
 echo.[%time:~0,8% INFO] BUILDING %~1
 
-echo.[%time:~0,8% INFO] Restoring packages
-echo.
-
-set ADD_RESTORE=false
-where nuget 1>nul 2>nul
-if "%ERRORLEVEL%"=="0" (
-	echo.[%time:~0,8% INFO] Nuget found
-	nuget restore %SOLUTION_NAME% -Recursive -NonInteractive
-	if not "!ERRORLEVEL!"=="0" (
-		set ADD_RESTORE=true
-	)
-) else (
-	echo.[%time:~0,8% INFO] Nuget not found in PATH
-	set ADD_RESTORE=true
-)
-
-REM common params
-set "COMMON_PARAM=%PROJECT_PATH% /p:VersionPrefix="%VERSION_TO_BUILD%" /p:VersionSuffix="%VERSION_SUFFIX%" /p:Configuration=Release /p:Platform="Any CPU" /p:IncludeSymbols=true /verbosity:%MSBUILD_VERBOSITY% /m /p:ZipRelease=true"
-
-REM targetFramework
-if not "%~1"=="" (
-	set "PROPTARGET=/p:targetFramework=%~1"
-)
-
-REM Build/Publish + Restore
-set "INPUTFWORK=%~1"
-IF "%INPUTFWORK:~0,4%"=="netc" (
-	set "TTYPE=Publish"
-)
-IF "%INPUTFWORK:~0,4%"=="nets" (
-	set "TTYPE=Publish"	
-)
-IF "%TTYPE%"=="" (
-	set "TTYPE=Rebuild"	
-)
 if "%~2"=="true" (
-	set "TTYPE=Restore,%TTYPE%"
+	set "MSBUILD_TARGET=Restore,%MSBUILD_DEFAULT_TARGET%"
+) else (
+	set "MSBUILD_TARGET=%MSBUILD_DEFAULT_TARGET%"
 )
 
-echo.
+set "BUILD_PARAMS="
+if not "%VERSION_TO_BUILD%"=="" (
+	set "BUILD_PARAMS=%BUILD_PARAMS% /p:Version="%VERSION_TO_BUILD%""
+)
+
+if "%CHANGE_DEFAULT_TARGETFRAMEWORK%"=="true" (
+	set "BUILD_PARAMS=%BUILD_PARAMS% /p:TargetFramework="%INPUT_FRAMEWORK%""
+)
+
 echo.[%time:~0,8% INFO] Starting msbuild
-echo.[%time:~0,8% INFO] PROPTARGET = %PROPTARGET%
-echo.[%time:~0,8% INFO] TTYPE = %TTYPE%
+echo.[%time:~0,8% INFO] MSBUILD_TARGET = %MSBUILD_TARGET%
+echo.[%time:~0,8% INFO] msbuild binlog viewer : http://msbuildlog.com/
 echo.
 
-echo msbuild binlog viewer : http://msbuildlog.com/
-
-call :MS_BUILD %COMMON_PARAM% %PROPTARGET% /t:%TTYPE% /bl:%~1.binlog
+call :MS_BUILD %PROJECT_PATH% /verbosity:%MSBUILD_VERBOSITY% /t:%MSBUILD_TARGET% /bl:%INPUT_FRAMEWORK%.binlog %BUILD_PARAMS% %CUSTOM_BUILD_PARAMS%
 if not "%ERRORLEVEL%"=="0" (
 	exit /b 1
 )
