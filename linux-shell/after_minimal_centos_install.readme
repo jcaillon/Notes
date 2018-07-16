@@ -1,0 +1,357 @@
+#!/bin/sh
+
+export http_proxy='http://lyon.proxy.corp.sopra:8080'
+export https_proxy='http://lyon.proxy.corp.sopra:8080'
+
+###############################################################################
+
+## SERVICE AU DEMARRAGE :
+chkconfig
+chkconfig --list
+chkconfig --level 3 slapd on 	# ajouter
+chkconfig --level 3 iptables off 	# supprimer
+
+
+## FIREWALL
+
+# get all zones
+firewall-cmd --get-zones
+# get zone details :
+firewall-cmd --zone=work --list-all
+# switch/get zone :
+firewall-cmd --set-default-zone=trusted && firewall-cmd --get-default-zone
+# list services in a zone
+firewall-cmd --list-services
+# monitor open ports
+firewall-cmd --list-ports
+# add a service permanent :
+firewall-cmd --add-service=http --permanent
+firewall-cmd --reload
+# allow port permanent
+firewall-cmd --add-port=331/tcp --permanent
+firewall-cmd --reload
+
+# disable firewalld
+# systemctl stop firewalld && systemctl disable firewalld && firewall-cmd --state
+
+# enable
+# systemctl enable firewalld && systemctl start firewalld && firewall-cmd --state
+
+
+## SE LINUX
+# yum install selinux-policy
+# getenforce
+# setenforce 0
+
+sestatus
+vi /etc/sysconfig/selinux
+# need reboot is selinux file is modified
+
+###############################################################################
+
+
+## ==========================
+## ifconfig
+yum provides ifconfig
+yum -y install net-tools
+ifconfig
+
+
+# can connect has root in ssh
+cat /etc/ssh/sshd_config
+
+
+## ==========================
+## hostname
+#vi /etc/hostname
+#echo $HOSTNAME
+# actually, just use the command in source-user-command instead
+
+
+## ==========================
+## update and upgrade
+yum update && yum upgrade
+#yum -y update && yum -y upgrade
+
+
+## ==========================
+## Delete old kernels
+yum -y install yum-utils
+package-cleanup --oldkernels --count=1
+
+
+## ==========================
+## Monitor Open Ports
+yum -y install nmap
+nmap 127.0.01
+firewall-cmd --list-ports
+
+
+## ==========================
+## wget
+yum -y install wget
+
+
+## ==========================
+## ncdu (espace disque)
+push /tmp
+wget http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+rpm -ivh epel-release-latest-7.noarch.rpm
+rm -y epel-release-latest-7.noarch.rpm
+popd
+yum -y repolist
+yum -y install ncdu
+
+
+## ==========================
+## allow progress to use SUDO :
+visudo
+# add : progress   ALL=(ALL)    ALL
+
+
+## ==========================
+## Increase sephamore value
+vi /etc/sysctl.conf
+# add line : kernel.sem = 250 32000 100 512
+# reload
+sysctl -p
+# display values
+ipcs -ls
+
+
+## ==========================
+## create directories
+mkdir -p /exploit/webclient
+chown -R progress:progress /exploit
+chmod -R 777 /exploit
+
+# change the default permission on files created in this rep
+setfacl -Rm default:mask:rwx /exploit
+chcon -R -t samba_share_t /exploit
+chcon -R -t public_content_rw_t /exploit/webclient
+
+
+## ==========================
+## SAMBA
+yum -y install samba samba-client samba-common
+cp -pf /etc/samba/smb.conf /etc/samba/smb.conf.bak
+vi /etc/samba/smb.conf
+
+#content :
+#[global]
+#workgroup = EMEAAD
+#server string = Samba Server %v
+#netbios name = centos
+#security = user
+#map to guest = bad user
+#dns proxy = no
+#ntlm auth = yes
+#
+#[exploit]
+#path = /exploit
+#browseable = yes
+#writable = yes
+#valid users = progress
+#force create mode = 777
+#force directory mode = 777
+
+# test the content : 
+testparm
+
+# add to firewall
+firewall-cmd --permanent --add-service=samba && firewall-cmd --reload
+
+# allow samba with SE LINUX : 
+chcon -R -t samba_share_t /exploit
+ls -ldZ /exploit
+
+# allow samba to access everywhere
+setsebool -P samba_export_all_rw 1
+
+# add progress USER to samba!
+usermod -g progress progress
+groups progress
+SAMBA_USER='progress' && SAMBA_PWD='progress' && echo -ne "${SAMBA_PWD}\n${SAMBA_PWD}\n" | smbpasswd -a -s ${SAMBA_USER}
+
+# list samba users:
+pdbedit -L
+
+# create/add samba user
+#SAMBA_USER=samba && SAMBA_PWD=samba && SAMBA_GROUP=progress
+#useradd samba -g ${SAMBA_GROUP} -G ${SAMBA_GROUP}
+#echo ${SAMBA_PWD} | passwd ${SAMBA_USER} --stdin
+#echo -ne "${SAMBA_PWD}\n${SAMBA_PWD}\n" | smbpasswd -a -s ${SAMBA_USER}
+## get the group of samba user
+#groups samba
+
+# restart
+systemctl enable smb.service
+systemctl enable nmb.service
+systemctl restart smb.service
+systemctl restart nmb.service
+
+# debug access from centos with 
+smbclient \\\\192.168.150.128\\exploit --user progress
+
+# dans windows, si pb :
+#Control Panel\All Control Panel Items\Network and Sharing Center\Advanced sharing settings
+#Private -> HomeGroup connections : Use user account...
+
+
+## LIGHTTPD
+yum -y install lighttpd lighttpd-fastcgi lighttpd-mod_geoip
+# service it
+systemctl enable lighttpd
+systemctl start lighttpd
+# autostart
+chkconfig --level 6 lighttpd on
+# give lighttp access to /exploit/webclient
+chcon -R -t public_content_rw_t /exploit/webclient
+ls -ldZ /exploit/webclient
+
+# open port 80 in firewall
+firewall-cmd --permanent --add-port=80/tcp
+firewall-cmd --reload
+
+vi /etc/lighttpd/lighttpd.conf
+# var.server_root = "/exploit/webclient"
+# server.use-ipv6 = "disable"
+vi /etc/lighttpd/conf.d/dirlisting.conf
+# dir-listing.activate      = "enable"
+# dir-listing.hide-dotfiles = "enable" 
+
+# restart
+service lighttpd restart
+# check port used 
+netstat -tulpn | grep :80
+
+
+## SSHPASS + SCP
+yum -y install sshpass
+ssh-keyscan slnxlyoncnafpasoe01.lyon.fr.sopra >>~/.ssh/known_hosts
+# sshpass -p sopra* scp -r root@slnxlyoncnafpasoe01.lyon.fr.sopra:/usr/admin-sopra /usr/admin-sopra
+# sshpass -p "progress" scp -r progress@slnxlyoncnafpasoe01.lyon.fr.sopra:/exploit/_shortcuts /exploit/_shortcuts
+
+
+## ntpd
+date
+yum -y install ntp
+# aternative server : ntpancy.ancy.fr.sopra
+ntpdate ntpptx.ptx.fr.sopra
+vi /etc/ntp.conf
+# -> Add line : 
+# server ntpancy.ancy.fr.sopra prefer
+systemctl enable ntpd && systemctl start ntpd && chkconfig ntpd on
+# check with : 
+# ntpq -p
+
+
+## init welcome.sh
+mkdir -p /usr/admin-sopra
+chmod 755 /usr/admin-sopra
+echo -ne "if [ -x /usr/admin-sopra/welcome.sh ] ; then\n	pushd /usr/admin-sopra>/dev/null\n	. ./welcome.sh\n	popd>/dev/null\nfi" > /etc/profile.d/welcome.sh
+chmod -R 755 /usr/admin-sopra
+
+
+## add script to run on boot
+https://www.thegeekdiary.com/centos-rhel-7-how-to-make-custom-script-to-run-automatically-during-boot/
+#echo -ne "echo $(whoami) >> /tmp/script.out" > /usr/admin-sopra/onboot.sh
+chmod 744 /usr/admin-sopra/onboot.sh
+echo -ne "[Unit]\nDescription=Custom on boot script\nAfter=network.target\n\n[Service]\nType=simple\nExecStart=/usr/admin-sopra/onboot.sh\nTimeoutStartSec=0\n\n[Install]\nWantedBy=default.target" > /etc/systemd/system/ssgonboot.service
+#
+#After= : If the script needs any other system facilities (networking, etc), modify the [Unit] section to include appropriate After=, Wants=, or Requires= directives.
+#Type= : Switch Type=simple for Type=idle in the [Service] section to delay execution of the script until all other jobs are dispatched
+#WantedBy= : target to run the sample script in
+#
+chmod 664 /etc/systemd/system/ssgonboot.service
+systemctl daemon-reload
+systemctl enable ssgonboot.service
+# test : 
+systemctl start ssgonboot.service
+
+
+## mount progress install .iso 
+sudo mount -t iso9660 /dev/cdrom /media
+cd /tmp
+/media/PROGRESS_OE_11.6_LNX_64/proinst
+
+#dlc dir :
+#/usr/progress/v1160/dlc
+#/usr/progress/v1160/wrk
+
+#cpinternal=ISO8859-15
+#cpcoll=Basic
+#cpcase=French
+#dateFormat=dmy
+#numberFormat=1 234,56   (space, comma)
+#numsep=32
+#numdec=44
+#folderName=OpenEdge 11.6 (32-bit)
+#defaultLanguage=French
+#defaultCountry=France
+
+# copy script to user bin -> no
+
+/media/PROGRESS_OE_11.6.3_LNX_64/proinst
+#/usr/progress/v1160/dlc/
+
+umount /media && eject
+
+# set progress rights :
+# https://knowledgebase.progress.com/articles/Article/P100887
+pushd $DLC/bin && chmod 4755 _* && chmod 755 _sql* && chmod 755 _waitfor && popd
+chmod 4755 /usr/progress/v1170/dlc/servers/pasoe/bin/*
+
+# create pasoe
+${CATALINA_HOME}/bin/tcman.sh create -p 50001 -P 50101 -j 50201 -s 50301 /exploit/pasoe/domaine1-p-cellule1
+${CATALINA_HOME}/bin/tcman.sh create -p 50001 -P 50002 -j 50003 -s 50004 /exploit/pasoe/domaine1-p-cellule1
+
+
+
+
+## install dotnet
+https://docs.microsoft.com/fr-fr/dotnet/core/linux-prerequisites?tabs=netcore2x#install-net-core-for-centos-71-64-bit--oracle-linux-71-64-bit
+rpm --import https://packages.microsoft.com/keys/microsoft.asc
+sh -c 'echo -e "[packages-microsoft-com-prod]\nname=packages-microsoft-com-prod \nbaseurl=https://packages.microsoft.com/yumrepos/microsoft-rhel7.3-prod\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/dotnetdev.repo'
+yum -y install libunwind libicu && yum -y install dotnet-sdk-2.0.0
+export PATH=$PATH:$HOME/dotnet
+dotnet --version
+
+
+## GIT
+yum -y install git
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Restore rights on folders
+chown -R progress:progress /exploit && chmod -R 777 /exploit
+setfacl -Rm default:mask:rwx /exploit && chcon -R -t samba_share_t /exploit && chcon -R -t public_content_rw_t /exploit/webclient
+
+mkdir -p /exploit/appli/domaine3/p/stable3
+sshpass -p "progress" scp -r progress@slnxlyoncnafpasoe01.lyon.fr.sopra:/exploit/appli/domaine3/p/stable3 /exploit/appli/domaine3/p/stable3
+mkdir -p /exploit/db/stable3/p/domaine3/mdo
+mkdir -p /exploit/db/stable3/p/domaine3/456
+sshpass -p "progress" scp -r progress@slnxlyoncnafpasoe01.lyon.fr.sopra:/exploit/db/stable3/p/domaine3/456 /exploit/db/stable3/p/domaine3/456
+sshpass -p "progress" scp -r progress@slnxlyoncnafpasoe01.lyon.fr.sopra:/exploit/db/stable3/p/domaine3/mdo /exploit/db/stable3/p/domaine3/mdo
+sshpass -p "progress" scp -r progress@slnxlyoncnafpasoe01.lyon.fr.sopra:/exploit/lib /exploit/lib
+mkdir -p /exploit/networking/domaine3/p/stable3
+sshpass -p "progress" scp -r progress@slnxlyoncnafpasoe01.lyon.fr.sopra:/exploit/networking/domaine3/p/stable3 /exploit/networking/domaine3/p/stable3
+
+
+#for folder in downloads lib misc networking rcode webclient
+#do
+#	sshpass -p "progress" scp -r progress@slnxlyoncnafpasoe01.lyon.fr.sopra:/exploit/$folder /exploit/$folder
+#done
+#sshpass -p "progress" scp progress@slnxlyoncnafpasoe01.lyon.fr.sopra:/exploit/pasoe/domaine2-p-stable2.zip /exploit/pasoe/domaine2-p-stable2.zip
