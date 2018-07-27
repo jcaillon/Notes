@@ -3,12 +3,14 @@ setlocal enabledelayedexpansion
 
 REM on CI, the version built will be replaced by the tag name instead of taking the version from csproj
 REM if PROJECT_PATH is empty, we use the solution
-if "%PROJECT_PATH%"=="" set "PROJECT_PATH=uHttpSharp\uHttpSharp.csproj"
-if "%CUSTOM_BUILD_PARAMS%"=="" set "CUSTOM_BUILD_PARAMS=/p:ZipRelease=true"
+if "%PROJECT_PATH%"=="" set "PROJECT_PATH=Oetools.Runner.Cli\Oetools.Runner.Cli.csproj"
+if "%CUSTOM_BUILD_PARAMS%"=="" set "CUSTOM_BUILD_PARAMS=/p:ZipCopiedOutput=true"
 REM set below to false if you don't want to change the target framework on build
-if "%CHANGE_DEFAULT_TARGETFRAMEWORK%"=="" set "CHANGE_DEFAULT_TARGETFRAMEWORK=false"
+if "%CHANGE_DEFAULT_TARGETFRAMEWORK%"=="" set "CHANGE_DEFAULT_TARGETFRAMEWORK=true"
 if "%TARGETED_FRAMEWORKS%"=="" set TARGETED_FRAMEWORKS=(netcoreapp2.0 net461)
-if "%MSBUILD_DEFAULT_TARGET%"=="" set "MSBUILD_DEFAULT_TARGET=Pack"
+REM if you are packing a lib, CHANGE_DEFAULT_TARGETFRAMEWORK should be false and MSBUILD_DEFAULT_TARGET = Pack
+REM otherwise, CHANGE_DEFAULT_TARGETFRAMEWORK should be true with correct TARGETED_FRAMEWORKS and MSBUILD_DEFAULT_TARGET = Publish
+if "%MSBUILD_DEFAULT_TARGET%"=="" set "MSBUILD_DEFAULT_TARGET=Publish"
 
 REM https://github.com/Microsoft/msbuild/wiki/MSBuild-Tips-&-Tricks
 

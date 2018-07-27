@@ -1,3 +1,5 @@
+http://en.otomatikmuhendis.com/2018/07/02/cheat-sheet-for-dotnet-cli/
+
 ```
 dotnet build
 dotnet Oetools.Runner.Cli\bin\Debug\netcoreapp2.0\Oetools.Runner.Cli.dll

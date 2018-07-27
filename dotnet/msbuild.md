@@ -11,6 +11,7 @@ https://msdn.microsoft.com/en-us/library/dd393574.aspx
 ```xml
 Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp'"
 Condition="'$(TargetFrameworkIdentifier)' != '.NETFramework'"
+Condition="$(TargetFramework.Contains('netstandard')) OR $(TargetFramework.Contains('netcoreapp'))"
 ```
 
 ## Target and a Task
@@ -32,22 +33,16 @@ msbuild buildapp.csproj /t:HelloWorld
 
 ## Build Properties
 
-```xml
-<PropertyGroup>
-...
-  <ProductVersion>10.0.11107</ProductVersion>
-  <SchemaVersion>2.0</SchemaVersion>
-  <ProjectGuid>{30E3C9D5-FD86-4691-A331-80EA5BA7E571}</ProjectGuid>
-  <OutputType>WinExe</OutputType>
-...
-</PropertyGroup>
-```
-
 Reserved Properties
 https://msdn.microsoft.com/en-us/library/ms164309.aspx
 
 Reference environment variables :
 https://msdn.microsoft.com/en-us/library/ms171459.aspx
+
+well known meta data like %(Fullname) :
+https://msdn.microsoft.com/fr-fr/library/ms164313.aspx
+
+http://source.roslyn.io/#MSBuildFiles/C/ProgramFiles(x86)/MicrosoftVisualStudio/2017/Enterprise/MSBuild/15.0/Bin_/Microsoft.Common.CurrentVersion.targets,2043
 
 ## Examining a Property Value
 
@@ -123,67 +118,121 @@ Certain characters have special meaning in MSBuild project files. Examples of th
   </Target>
 ```
 
+## Item groups
+
+```xml
+<ItemGroup>
+  <Compile Include="..\Shared\*.cs" Exclude="..\Shared\Not\*.cs" />
+  <EmbeddedResource Include="..\Shared\*.resx" />
+  <Content Include="Views\**\*" PackagePath="%(Identity)" />
+  <None Include="some/path/in/project.txt" Pack="true" PackagePath="in/package.txt" />
+
+  <None Include="notes.txt" CopyToOutputDirectory="Always" />
+  <!-- CopyToOutputDirectory = { Always, PreserveNewest, Never } -->
+
+  <Content Include="files\**\*" CopyToPublishDirectory="PreserveNewest" />
+  <None Include="publishnotes.txt" CopyToPublishDirectory="Always" />
+  <!-- CopyToPublishDirectory = { Always, PreserveNewest, Never } -->
+
+  <!-- you can set both copy output and publish directories-->
+  <None Include="testasset.txt" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
+
+  <!-- alternatively, use nested XML attributes. They're functionally the same-->
+  <None Include="testasset2.txt">
+    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+  </None>
+
+</ItemGroup>
+```
+
+## References
+
+```xml
+<ItemGroup>
+  <PackageReference Include="Microsoft.AspNetCore" Version="1.1.0" />
+</ItemGroup>
+<ItemGroup Condition="'$(TargetFramework)'=='net451'">
+  <PackageReference Include="System.Collections.Immutable" Version="1.3.1" />
+</ItemGroup>
+<ItemGroup Condition="'$(TargetFramework)'=='netstandard1.5'">
+  <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
+</ItemGroup>
+<PropertyGroup>
+  <PackageTargetFallback>dnxcore50;dotnet</PackageTargetFallback>
+</PropertyGroup>
+<ItemGroup>
+  <PackageReference Include="YamlDotNet" Version="4.0.1-pre309" />
+</ItemGroup>
+<ItemGroup>
+  <ProjectReference Include="..\MyOtherProject\MyOtherProject.csproj" />
+  <ProjectReference Include="..\AnotherProject\AnotherProject.csproj" />
+</ItemGroup>
+<ItemGroup>
+  <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="1.1.0" PrivateAssets="All" />
+</ItemGroup>
+```
+
 ## Typical project file
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup  Label="Basic info">
+  <PropertyGroup  Label="Basic info">    
     <!-- Exe or Library-->
-    <OutputType>Library</OutputType>
-    <AssemblyName>uhttpsharp</AssemblyName>
-    <RootNamespace>$(AssemblyName)</RootNamespace>
-    <TargetName>$(AssemblyName)</TargetName>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>sakoe</AssemblyName>
+    <RootNamespace>Oetools.Runner</RootNamespace>
     <!-- Assembly.GetExecutingAssembly().GetName().Version = $(Version) but completed if necessary to make a 4 digit version and without what is after the dash -->
     <!-- FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion = $(Version) -->
-    <Version>1.0.0-rc</Version>
+    <Version>1.0.0-beta</Version>
     <!-- FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion = $(FileVersion) -->
     <FileVersion>$(VersionPrefix)</FileVersion>
     <!-- this will be the product name-->
-    <Product>µHttpSharp</Product>
+    <Product>sakoe</Product>
     <!-- this will be the file description -->
-    <AssemblyTitle>$(Product) - a micro http server</AssemblyTitle>
-    <Copyright>Copyright (c) 2018</Copyright>
-    <!-- The file version will be VersionPrefix and the Product version will be VersionPrefix-VersionSuffix -->
-    <ApplicationIcon></ApplicationIcon>
+    <AssemblyTitle>$(Product) - Swiss Army Knife for OpenEdge</AssemblyTitle>
+    <Copyright>Copyright (c) 2018 - Julien Caillon - GNU General Public License v3</Copyright>
+    <ApplicationIcon>app.ico</ApplicationIcon>
   </PropertyGroup>
 
   <PropertyGroup Label="Package info basic">
     <Title>$(AssemblyTitle)</Title>
-    <Description>A very lightweight &amp; simple embedded http server for c#</Description>
+    <Description>A set of handy tools for openedge developers</Description>
     <Company>Noyacode</Company>
-    <Authors>jcailon,shani.elh,Joe White, Hüseyin Uslu</Authors>
+    <Authors>jcailon</Authors>
   </PropertyGroup>
 
   <PropertyGroup Label="Package info">
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PackageId>$(Company).$(AssemblyName)</PackageId>
-    <PackageVersionPrefix>$(VersionPrefix)</PackageVersionPrefix>
-    <PackageVersionSuffix>$(VersionSuffix)</PackageVersionSuffix>
+    <PackageVersion>$(Version)</PackageVersion>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageLicenseUrl>https://github.com/jcaillon/uHttpSharp/blob/master/LICENSE.txt</PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/jcaillon/uHttpSharp</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/jcaillon/Oetools.Runner/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/jcaillon/Oetools.Runner</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/jcaillon/uHttpSharp.git</RepositoryUrl>
-    <PackageIconUrl></PackageIconUrl>
-    <PackageReleaseNotes>Initial release for dotnet standard</PackageReleaseNotes>
-    <PackageTags>http server microframeworks</PackageTags>
+    <RepositoryUrl>https://github.com/jcaillon/Oetools.Runner.git</RepositoryUrl>
+    <PackageIconUrl>https://raw.githubusercontent.com/jcaillon/Oetools.Runner/master/.docs/logo.png</PackageIconUrl>
+    <PackageReleaseNotes></PackageReleaseNotes>
+    <PackageTags>openedge sakoe progress 4GL abl</PackageTags>
     <PackageOutputPath>$(OutputPath)</PackageOutputPath>
-    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <!-- allow pdb to be packed with the the nuget package (instead of having a separate pack for debug symbols) -->
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>   
   </PropertyGroup>
 
   <PropertyGroup Label="Compilation info">
     <!-- https://docs.microsoft.com/en-us/dotnet/standard/frameworks -->
-    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net461;netcoreapp2.0</TargetFrameworks>
     <!-- The operating system you are building for. Valid values are "Any CPU", "x86", and "x64" -->
     <Platform>Any Cpu</Platform>
     <Configuration>Release</Configuration>
-    <SolutionDir Condition=" $(SolutionDir) == ''">.\</SolutionDir>
+    <SolutionDir Condition=" $(SolutionDir) == ''">..\</SolutionDir>
     <DebugSymbols>true</DebugSymbols>
     <Optimize Condition=" '$(Configuration)' == 'Release' ">true</Optimize>
   </PropertyGroup>
 
   <PropertyGroup Label="Extra stuff">
+    <TargetName>$(AssemblyName)</TargetName>
     <!-- fallback language for language resources -->
     <NeutralLanguage>en-GB</NeutralLanguage>
     <!-- Specifies the path of the file that is used to generate external User Account Control (UAC) manifest information -->
@@ -193,7 +242,7 @@ Certain characters have special meaning in MSBuild project files. Examples of th
     <SignAssembly>true</SignAssembly>
     <PublicSign Condition="'$(OS)' != 'Windows_NT'">true</PublicSign>
     <!-- To use with #if... -->
-    <DefineConstants>DEBUG;MACHIN</DefineConstants>
+    <DefineConstants Condition=" '$(TargetFramework)'=='net461' ">$(DefineConstants);NET461;WINDOWSONLYBUILD</DefineConstants>
     <!-- generate an xml file documentation -->
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <!-- Specify the class that contains the main method -->
@@ -203,6 +252,7 @@ Certain characters have special meaning in MSBuild project files. Examples of th
     <!-- throw an exception on overflow instead of failing quietly -->
     <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoWarn>$(NoWarn);CS0168;CS0219</NoWarn>
   </PropertyGroup>
 
   <!-- DebugType -->
@@ -231,6 +281,32 @@ Certain characters have special meaning in MSBuild project files. Examples of th
     </Otherwise>
   </Choose>
 </Project>
+```
+
+## Extra targets
+
+```xml
+<ItemGroup Label="ProjectReferences">
+  <ProjectReference Include="..\Oetools.HtmlExport\Oetools.HtmlExport.csproj" />
+  <ProjectReference Include="..\Oetools.Packager\Oetools.Packager\Oetools.Packager.csproj" />
+  <ProjectReference Include="..\Oetools.Packager\Oetools.Utilities\Oetools.Utilities\Oetools.Utilities.csproj" />
+</ItemGroup>
+
+<ItemGroup Label="PackageReferences">
+  <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="2.2.4" />
+</ItemGroup>
+
+<ItemGroup Label="Files to copy">
+    <None Include="app.ico" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
+</ItemGroup>
+
+<!-- Extra targets -->
+
+<!-- Embed dependencies -->
+<Import Project="Target.EmbedDependencies.target" />
+
+<!-- CopyOutput -->
+<Import Project="Target.CopyOutput.target" />
 ```
 
 ## app.manifest example
