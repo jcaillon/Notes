@@ -76,18 +76,18 @@ artifacts:
 #---------------------------------#
 
 before_deploy:
-  - ps: ${env:RELEASE_DESCRIPTION} = (Get-Content -LiteralPath ReleaseNotes.md -Encoding UTF8) -join "`n";
+  - ps: ${env:RELEASE_DESCRIPTION} = (Get-Content -LiteralPath docs\RELEASE_NOTES.md -Encoding UTF8) -join "`n";
 
 deploy:
-  - provider: NuGet
-    # generate at https://www.nuget.org/account/apikeys
-    # encrypt at https://ci.appveyor.com/tools/encrypt
-    api_key:
-      secure: 1HSNRkoAKGkg6seM4hZtRbdOAtLw+kOhyfiMEYQahX6CZ6q0qVycZXGxjMUl8HOy
-    artifact: nupkg
-    on:
-      branch: master
-      APPVEYOR_REPO_TAG: true
+#  - provider: NuGet
+#    # generate at https://www.nuget.org/account/apikeys
+#    # encrypt at https://ci.appveyor.com/tools/encrypt
+#    api_key:
+#      secure: 1HSNRkoAKGkg6seM4hZtRbdOAtLw+kOhyfiMEYQahX6CZ6q0qVycZXGxjMUl8HOy
+#    artifact: nupkg
+#    on:
+#      branch: master
+#      APPVEYOR_REPO_TAG: true
 
   - provider: GitHub
     tag: $(APPVEYOR_REPO_TAG_NAME)
@@ -96,7 +96,7 @@ deploy:
     # generate at https://github.com/settings/tokens (scope : public_repo)
     # encrypt at https://ci.appveyor.com/tools/encrypt
     auth_token:
-      secure: Tr3GWrBEn+yX7XnN6KsngVCr+VvJqQrCCSmvE5RfOWGzgMbtoYf3k+xUOxhmp3U+
+      secure: zDL5COwBGVuS+6EFFXUnIuvhmOi63DNyHAIb+0rO5JOe0rA1wHAe9Y8R+9HARS4D
     artifact: zip
     draft: true
     prerelease: true

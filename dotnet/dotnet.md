@@ -1,3 +1,11 @@
+# dotnet
+
+## dotnet application example
+
+https://github.com/filipw/dotnet-script/releases
+
+## other
+
 http://en.otomatikmuhendis.com/2018/07/02/cheat-sheet-for-dotnet-cli/
 
 ```
