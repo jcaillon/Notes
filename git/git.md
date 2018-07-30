@@ -486,7 +486,7 @@ git clone remote.git local
 A parent will point to a specific commit of a submodule. Submodules can be updated as regular git repo inside their parent's repo.
 
 ```bash
-git submodule add git@example.com:project.git # will add .submodules (config file) and the project file (the submodule itself) 
+git submodule add git@example.com:project.git	
 git submodule update --init --recursive # this will add the submodules to the .git/config + clone + checkout them
 ```
 
@@ -677,6 +677,10 @@ git diff HEAD^..HEAD
 git diff <SHA1>..<SHA2>
 git diff <branch1> <branch2>
 ```
+
+### git show-branch
+
+Show branches and their commits
 
 ---
 
