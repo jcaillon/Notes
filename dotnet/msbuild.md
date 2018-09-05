@@ -173,6 +173,28 @@ Certain characters have special meaning in MSBuild project files. Examples of th
 </ItemGroup>
 ```
 
+## Reference a .dll or fallback to nuget package
+
+```xml
+  <!-- prefer to use the latest built dll of the plugin interface, or fallback to the latest package on nuget -->
+  <PropertyGroup>
+    <ReferenceDllPath>$(ProjectDir)..\..\MailBotPluginInterface\bin\Any CPU\Release\netstandard2.0\MailBotPluginInterface.dll</ReferenceDllPath>
+  </PropertyGroup>
+  <Choose>
+    <When Condition="Exists('$(ReferenceDllPath)')">
+      <ItemGroup>
+        <Reference Include="$(ReferenceDllPath)" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <PackageReference Include="MailBotPluginInterface" Version="1.*" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+```
+
+
 ## Typical project file
 
 ```xml
