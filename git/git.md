@@ -32,7 +32,7 @@ TO READ...
 
 **head** : a named reference to the commit at the tip of a branch, stored in `$GIT_DIR/refs/heads/`
 
-**HEAD** : the current branch. Is a reference of one of the heads in your repo, except when using a detached HEAD
+**HEAD** : the current branch. Is a reference of one of the heads in your repo, except when using a detached HEAD (in that case it is directly a commit HASH)
 
 **object** : unit of storage identified by the SHA-1 of its content + history, they are stored in `$GIT_DIR/objects/`
 
@@ -52,6 +52,8 @@ TO READ...
 
 **merge base** : first common ancestor (reachable by both branch)
 
+**staging area** : aka index
+
 ```bash
 git branch
 # * master
@@ -66,6 +68,21 @@ cat .git/packed-refs
 # sometimes, branches/tags/remotes are stored in the .git/packed-refs instead of the usual refs/ directory
 # this is for performances (1 file instead of 100), you can force pack with git pack-refs --all
 ```
+
+### Git folder content
+
+| path | function |
+|---------------------|-----------------------------|
+| hooks/\*.sh | executable scripts started on git actions (like git checkout or git commit) |
+| info/exclude | same function as .gitignore, allows to describe files/folders that should not be committed to the repo |
+| logs/ | for each branch of the repo, keep a log on how the head (tip) of a branch moved |
+| objects/ | the object database, were git store every piece of data committed as a key-value data store. Note that if you concat the sub folder name (2 chars) + any file name in this sub folder (38) you get the hash that should be used to address this object (eg 65/142965161d014c8e8bfd77fee6d41cea257adb). |
+| refs/ | contains the references. Contains files containing HASH of the commit they link to. |
+| config | the local (only for this repo) config file |
+| description | description of the repo... kind of useless nowadays | 
+| HEAD | contains either a commit HASH or the name of a reference that is currently checked out |
+| index | The index is a binary file (generally kept in .git/index) containing a sorted list of path names, each with permissions and the SHA1 of a blob object; git ls-files can show you the contents of the index |
+| packed-refs | not always present, same function as the refs folder expect that all the info are in one file which is better for a performance perspective |
 
 ### git config
 
@@ -479,6 +496,18 @@ Create a local (on the local filesystem) repo :
 git init --bare remote.git
 # clone it :
 git clone remote.git local
+```
+
+### git revert
+
+Revert some existing commits (creates a new commit to cancel an earlier commit).
+
+```bash
+git revert [--[no-]edit] [-n] [-m parent-number] [-s] [-S[<keyid>]] <commit>
+git revert HEAD~3
+git revert --continue
+git revert --quit
+git revert --aborthow which branches are tracked for the given remote
 ```
 
 ### git submodule
