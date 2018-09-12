@@ -2,6 +2,7 @@
 
 ## Cool sites
 
+- https://git-scm.com/book/en/v2
 - http://onlywei.github.io/explain-git-with-d3/#branch
 - http://marklodato.github.io/visual-git-guide/index-en.html
 - http://think-like-a-git.net
@@ -20,39 +21,23 @@ TO READ...
 
 ### Vocabulary
 
-**reachable** : All of the ancestors of a given commit are said to be "reachable" from that commit. More generally, one object is reachable from another if we can reach the one from the other by a chain that follows tags to whatever they tag, commits to their parents or trees, and trees to the trees or blobs that they contain
-
-**Headless** : not reachable from a reference (and eligible to be garbage collected)
-
-**dangling object** : an unreachable object (there is no reference to it from any reference or object in the repo)
-
-**detached HEAD** : Normally the HEAD stores the name of a branch, and commands that operate on the history HEAD represents operate on the history leading to the tip of the branch the HEAD points at. However, Git also allows you to check out an arbitrary commit that isn’t necessarily the tip of any particular branch. The HEAD in such a state is called "detached"
-
-**Tip of a branch** : most recent commit of a branch = branch HEAD
-
-**head** : a named reference to the commit at the tip of a branch, stored in `$GIT_DIR/refs/heads/`
-
-**HEAD** : the current branch. Is a reference of one of the heads in your repo, except when using a detached HEAD (in that case it is directly a commit HASH)
-
-**object** : unit of storage identified by the SHA-1 of its content + history, they are stored in `$GIT_DIR/objects/`
-
-**ref** : a name that begins with ref/ (e.g. refs/heads/master) that points to an object or another ref (a symbolic ref). They can be abbreviated when used in command (HEAD for instance). Stored in `$GIT_DIR/refs` see `git help revisions`. _A reference is what makes a commit reachable!_
-
-**symref** : symbolic reference, instead of containing the SHA, it is of the format refs/some/thing, are a simpler form like HEAD
-
-**tag** : stored under `$GIT_DIR/refs/tags/`, points to a object (commit or another tag)
-
-**commit-ish** : commit object, tag object, basically anything that git can turn into a SHA
-
-**tree-ish** : either a tree object (e.i. list of files/directory), tag object or commit-ish
-
-**dirty working directory** : a working dir is dirty if it does not correspond to the revision referenced by the current HEAD
-
-**fast-forward** : a special type of merge where the first common ancestor of the merged branched is also the tip of the branch you merge onto. This will simply update the revision of the branch you are merging onto
-
-**merge base** : first common ancestor (reachable by both branch)
-
-**staging area** : aka index
+- **reachable** : All of the ancestors of a given commit are said to be "reachable" from that commit. More generally, one object is reachable from another if we can reach the one from the other by a chain that follows tags to whatever they tag, commits to their parents or trees, and trees to the trees or blobs that they contain
+- **Headless** : not reachable from a reference (and eligible to be garbage collected)
+- **dangling object** : an unreachable object (there is no reference to it from any reference or object in the repo)
+- **detached HEAD** : Normally the HEAD stores the name of a branch, and commands that operate on the history HEAD represents operate on the history leading to the tip of the branch the HEAD points at. However, Git also allows you to check out an arbitrary commit that isn’t necessarily the tip of any particular branch. The HEAD in such a state is called "detached"
+- **Tip of a branch** : most recent commit of a branch = branch HEAD
+- **head** : a named reference to the commit at the tip of a branch, stored in `$GIT_DIR/refs/heads/`
+- **HEAD** : the current branch. Is a reference of one of the heads in your repo, except when using a detached HEAD (in that case it is directly a commit HASH)
+- **object** : unit of storage identified by the SHA-1 of its content + history, they are stored in `$GIT_DIR/objects/`
+- **ref** : a name that begins with ref/ (e.g. refs/heads/master) that points to an object or another ref (a symbolic ref). They can be abbreviated when used in command (HEAD for instance). Stored in `$GIT_DIR/refs` see `git help revisions`. _A reference is what makes a commit reachable!_
+- **symref** : symbolic reference, instead of containing the SHA, it is of the format refs/some/thing, are a simpler form like HEAD
+- **tag** : stored under `$GIT_DIR/refs/tags/`, points to a object (commit or another tag)
+- **commit-ish** : commit object, tag object, basically anything that git can turn into a SHA1
+- **tree-ish** : either a tree object (e.i. list of files/directory), tag object or commit-ish
+- **dirty working directory** : a working dir is dirty if there are files modified compared to the revision referenced by the current HEAD
+- **fast-forward** : a special type of merge where the first common ancestor of the merged branched is also the tip of the branch you merge onto. This will simply update the revision of the branch you are merging onto
+- **merge base** : first common ancestor (reachable by both branch)
+- **staging area** : aka index
 
 ```bash
 git branch
@@ -574,19 +559,6 @@ git push --recurse-submodules=on-demand # will push ALL repositories (even submo
 git config alias.pushall "push --recurse-submodules=on-demand"
 ```
 
-### git reflog
-
-The hidden log updated anytime HEAD moves (due to new commits, checkout or reset).
-The reflog only exists locally, not on the remote repo.
-
-For example, HEAD@{2} means "where HEAD used to be two moves ago", master@{one.week.ago} means "where master used to point to one week ago in this local repository", and so on.
-
-```bash
-git reflog
-# lost a commit? it is in the reflog, find the associated <SHA> or <reflog_shortname> (i.e. HEAD@{x}) then
-git reset --hard <sha>
-```
-
 ### git cherry-pick
 
 Apply the changes introduced by some existing commits
@@ -615,6 +587,25 @@ git filter-branch -f --prune-empty -- --all # drops commits that don't alter any
 
 ## Inspecting repo
 
+### git diff
+
+Generates patch files or statistics of differences between paths or files in your git repository, or your index or your working directory.
+
+```bash
+git diff # show un-staged differences since last commit
+git diff --staged # show staged differences since last commit
+git diff HEAD # diff between last commit and current state
+
+git diff HEAD^ # parent of latest commit
+git diff HEAD^^ # grandparent of latest commit
+git diff HEAD~5 # 5 commits ago
+# see also...
+git help revisions
+git diff HEAD^..HEAD
+git diff <SHA1>..<SHA2>
+git diff <branch1> <branch2>
+```
+
 ### git log
 
 Shows a listing of commits on a branch or involving a specific file and optionally details about what changed between it and its parents.
@@ -628,6 +619,19 @@ git log --oneline --graph # graphical representation
 git log --since=1.day.ago
 git log --until=1.minute.ago
 git log --since=2000-01-01 --until=1.minute.ago
+```
+
+### git reflog
+
+The hidden log updated anytime HEAD moves (due to new commits, checkout or reset).
+The reflog only exists locally, not on the remote repo.
+
+For example, HEAD@{2} means "where HEAD used to be two moves ago", master@{one.week.ago} means "where master used to point to one week ago in this local repository", and so on.
+
+```bash
+git reflog
+# lost a commit? it is in the reflog, find the associated <SHA> or <reflog_shortname> (i.e. HEAD@{x}) then
+git reset --hard <sha>
 ```
 
 ### git blame
@@ -688,24 +692,6 @@ commit message
 ### git grep
 
 Lets you search through your trees of content for words and phrases without having to actually check them out.
-
-### git diff
-
-Generates patch files or statistics of differences between paths or files in your git repository, or your index or your working directory.
-
-```bash
-git diff # show unstaged differences since last commit
-git diff HEAD # diff between last commit and current state
-
-git diff HEAD^ # parent of latest commit
-git diff HEAD^^ # grandparent of latest commit
-git diff HEAD~5 # 5 commits ago
-# see also...
-git help revisions
-git diff HEAD^..HEAD
-git diff <SHA1>..<SHA2>
-git diff <branch1> <branch2>
-```
 
 ### git show-branch
 
