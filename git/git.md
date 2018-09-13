@@ -1,73 +1,8 @@
 # GIT CHEAT SHEET
 
-## Cool sites
+[See also the git training page.](./git_training.md)
 
-- https://git-scm.com/book/en/v2
-- http://onlywei.github.io/explain-git-with-d3/#branch
-- http://marklodato.github.io/visual-git-guide/index-en.html
-- http://think-like-a-git.net
-- https://github.com/pluralsight/git-internals-pdf/releases
-- https://speakerdeck.com/lemiorhan/10-git-anti-patterns-you-should-be-aware-of
-- https://www.atlassian.com/git/tutorials/what-is-version-control
-- http://shafiulazam.com/gitbook/1_the_git_object_model.html
-
-TO READ...
-
-- https://www.atlassian.com/blog/git/alternatives-to-git-submodule-git-subtree
-
----
-
-## Basics
-
-### Vocabulary
-
-- **reachable** : All of the ancestors of a given commit are said to be "reachable" from that commit. More generally, one object is reachable from another if we can reach the one from the other by a chain that follows tags to whatever they tag, commits to their parents or trees, and trees to the trees or blobs that they contain
-- **Headless** : not reachable from a reference (and eligible to be garbage collected)
-- **dangling object** : an unreachable object (there is no reference to it from any reference or object in the repo)
-- **detached HEAD** : Normally the HEAD stores the name of a branch, and commands that operate on the history HEAD represents operate on the history leading to the tip of the branch the HEAD points at. However, Git also allows you to check out an arbitrary commit that isn’t necessarily the tip of any particular branch. The HEAD in such a state is called "detached"
-- **Tip of a branch** : most recent commit of a branch = branch HEAD
-- **head** : a named reference to the commit at the tip of a branch, stored in `$GIT_DIR/refs/heads/`
-- **HEAD** : the current branch. Is a reference of one of the heads in your repo, except when using a detached HEAD (in that case it is directly a commit HASH)
-- **object** : unit of storage identified by the SHA-1 of its content + history, they are stored in `$GIT_DIR/objects/`
-- **ref** : a name that begins with ref/ (e.g. refs/heads/master) that points to an object or another ref (a symbolic ref). They can be abbreviated when used in command (HEAD for instance). Stored in `$GIT_DIR/refs` see `git help revisions`. _A reference is what makes a commit reachable!_
-- **symref** : symbolic reference, instead of containing the SHA, it is of the format refs/some/thing, are a simpler form like HEAD
-- **tag** : stored under `$GIT_DIR/refs/tags/`, points to a object (commit or another tag)
-- **commit-ish** : commit object, tag object, basically anything that git can turn into a SHA1
-- **tree-ish** : either a tree object (e.i. list of files/directory), tag object or commit-ish
-- **dirty working directory** : a working dir is dirty if there are files modified compared to the revision referenced by the current HEAD
-- **fast-forward** : a special type of merge where the first common ancestor of the merged branched is also the tip of the branch you merge onto. This will simply update the revision of the branch you are merging onto
-- **merge base** : first common ancestor (reachable by both branch)
-- **staging area** : aka index
-
-```bash
-git branch
-# * master
-ls .git/refs/heads/
-# master
-cat .git/refs/heads/master
-# <commit_sha>
-cat .git/HEAD
-# ref: refs/heads/master
-cat .git/packed-refs
-# dd452f4ee5ee2d3860f211af5f4bf14372acb198 refs/remotes/origin/3.0.0/ft/issue2
-# sometimes, branches/tags/remotes are stored in the .git/packed-refs instead of the usual refs/ directory
-# this is for performances (1 file instead of 100), you can force pack with git pack-refs --all
-```
-
-### Git folder content
-
-| path | function |
-|---------------------|-----------------------------|
-| hooks/\*.sh | executable scripts started on git actions (like git checkout or git commit) |
-| info/exclude | same function as .gitignore, allows to describe files/folders that should not be committed to the repo |
-| logs/ | for each branch of the repo, keep a log on how the head (tip) of a branch moved |
-| objects/ | the object database, were git store every piece of data committed as a key-value data store. Note that if you concat the sub folder name (2 chars) + any file name in this sub folder (38) you get the hash that should be used to address this object (eg 65/142965161d014c8e8bfd77fee6d41cea257adb). |
-| refs/ | contains the references. Contains files containing HASH of the commit they link to. |
-| config | the local (only for this repo) config file |
-| description | description of the repo... kind of useless nowadays | 
-| HEAD | contains either a commit HASH or the name of a reference that is currently checked out |
-| index | The index is a binary file (generally kept in .git/index) containing a sorted list of path names, each with permissions and the SHA1 of a blob object; git ls-files can show you the contents of the index |
-| packed-refs | not always present, same function as the refs folder expect that all the info are in one file which is better for a performance perspective |
+## Commands
 
 ### git config
 
@@ -97,10 +32,6 @@ git config --global rerere.enabled true # will remember the conflict resolution 
 git lol
 ```
 
----
-
-## Commands
-
 ### git init
 
 Initializes a git repository – creates the initial ‘.git’ directory in a new or existing project.
@@ -114,6 +45,7 @@ Copies a Git repository from another place and adds the original location as a r
 ```bash
 git clone <url>
 git clone <url> <localfolder>
+git clone -c key=value <url> <localfolder>
 git clone --recurse-submodules <url> # option to clone + init and update all submodules
 ```
 
@@ -179,7 +111,7 @@ git status -sb # shorter version
 
 Lists existing branches, including remote branches if `-a` is provided. Creates a new branch if a branch name is provided. Branches can also be created with `-b` option to `git checkout`.
 
-Branches are *savepoints*. Since they are references, they make commits reachable. Creating a commit is thus a way to nail down part of the graph that you migh want to come back to later.
+Branches are *savepoints*. Since they are references, they make commits reachable. Creating a commit is thus a way to nail down part of the graph that you might want to come back to later.
 
 And because neither git merge nor git rebase will change your existing commits (remember, a commit's ID is a hash of its contents and its history), you can create a temporary branch any time you want to try something you're even just a little bit unsure about.
 
@@ -217,17 +149,17 @@ Switch branches or restore working tree files.
 Checks out a different branch – makes your working directory look like the tree of the commit that branch points to and updates your HEAD to point to this branch now, so your next commit will modify it.
 
 ```bash
-git checkout <branch> # switch to branch (does not modify the working directory, files are ready to be staged/committed)
-git checkout -b <branch> # create then switch to branch
-git checkout -b <branch> <commit-ish> # create then switch to branch from a specific commit (default to HEAD)
-git checkout -b <branch> origin/<branch> # create + switch to a new local branch + track a remote branch
+git checkout <branch> # switch to branch (does not work if your working directory is dirty)
+git checkout -b <branch> # creates a branch and moves the HEAD on it, does not modify the working directory or the index
+git checkout -b <branch> <commit-ish> # create then switch to branch from a specific commit (default to HEAD, does not work if your working directory is dirty)
+git checkout -b <branch> origin/<branch> # create + switch to the new local branch from origin + track a remote branch
 git checkout <feature_branch_on_remote> # if feature does not exist locally but exists on a remote, it is equals than the command above
 
 git checkout LICENSE # blow away all the changes since last commit
-git checkout HEAD LICENSE # specify a commit to rollback this file to
+git checkout HEAD -- LICENSE # specify a commit to rollback this file to
 
 # checkout the file from the last commit of a branch
-git checkout <branch> bin/gct-cli.exe
+git checkout <branch> -- bin/gct-cli.exe
 
 # Add a branch w/o history
 git checkout --orphan binaries
@@ -240,8 +172,8 @@ Reset current HEAD to the specified state.
 Resets your index and working directory to the state of your last commit, in the event that something screwed up and you just want to go back.
 
 ```bash
-git reset -- file.txt # unstage a file (HEAD is the last commit), opposite of git add file.txt, use -- to separated options from file names
-git reset <commit-ish> file.txt # specify a commit (default to HEAD)
+git reset -- file.txt # restore the index and working directory with the version file.txt as it is in HEAD
+git reset <commit-ish> -- file.txt # specify a different commit than HEAD (default to HEAD)
 git reset --soft HEAD^ # undo last commit, all files ready to be commited again, moving to the commit BEFORE HEAD = HEAD^
 git reset --hard HEAD^ # undo last commit and reset your working dir as well as the index
 git reset --hard HEAD^^ # undo last 2 commit
@@ -344,16 +276,14 @@ Never rebase a public branch (e.g. master, release branch, shared dev branch...)
 TODO :
 
 ```bash
-if you go for the merge instead or rebase, force git not to use fast-forward when merging onto master, so you get a merge commit when mrging a feature branch, even if you could fast forward it
-
+# if you go for the merge instead or rebase, force git not to use fast-forward when merging onto master, so you get a merge commit when merging a feature branch, even if you could fast forward it
 git checkout master
 git merge --no-ff feature_branch
-
-Create the merge request
+# Create the merge request
 git checkout feat
 git rebase -i HEAD~x (squash them)
 git push -f
-(pull request has been updated, you only see 1 commit now)
+# (pull request has been updated, you only see 1 commit now)
 # then integrate the changes of master into the feat
 git rebase master
 # cool, now we can fast forward on master
