@@ -549,6 +549,11 @@ git log --oneline --graph # graphical representation
 git log --since=1.day.ago
 git log --until=1.minute.ago
 git log --since=2000-01-01 --until=1.minute.ago
+git log master..experiment # all commits reachable from experiment that aren’t reachable from master
+git log ^master experiment # same as above
+git log experiment --not master # same as above
+git log master...experiment #  all the commits that are reachable by either of two references but not by both of them
+git log --left-right master...experiment # same but you also have the info : if the commit belongs to the left branch or the right branch
 ```
 
 ### git reflog

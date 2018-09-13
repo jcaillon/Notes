@@ -433,12 +433,14 @@ git reset <mode> <commit-ish>
 
 With the 3 options (--hard), this is almost equals to a `git checkout`! Almost because the checkout command only makes the `HEAD` point to another reference, it doesn't actually change the branch reference! Also, checkout is safe because if the working directory is dirty, the command fails. Reset however, will just discard all your modifications without warnings.
 
-Extra tips, reference commits relative to a known commit :
+Extra tips, reference commits relative to a known commit [doc](https://git-scm.com/book/en/v2/Git-Tools-Revision-Selection) :
 
-```ssh
-git diff HEAD^ # parent of latest commit
-git diff <branch>^^ # grandparent of latest commit of the branch
-git diff HEAD~5 # 5 commits ago
+```bash
+git reset HEAD^ # ancestry reference - parent of latest commit
+git reset <branch>^^ # grandparent of latest commit of the branch
+git reset HEAD~5 # 5 commits ago in the current branch
+giy reset HEAD@{2} # (reflog shortname) where the HEAD was 2 moves ago
+giy reset master@{one.week.ago} # where master used to point one week ago
 ```
 
 *Difference between checkout and reset :*
@@ -524,6 +526,23 @@ git rebase <apply_commits_of_this_branch_first> <then_apply_those_commits> # exp
 ```
 
 > The main asset of the rebase command is that it creates a LINEAR history, skipping the details of what was done on each created branch
+
+Here is the detail of how a rebase operates `git rebase <branch> <current_branch>` :
+
+- find the first common ancestor commit of `<branch>` and `<current_branch>` (the first commit reachable from both branch)
+- move all changes of `<current_branch>` made since this common commit (=which are not reachable from `<branch>`) to a temp area
+- run all `<branch>` commits, one by one
+- run all commits in the temp area, one at a time -> if there is a conflict when applying a commit, the rebase pauses, you resolve conflicts and then it can resume
+
+By default, the `rebase` command simply replays all the commits in the temp area one at a time and in the same order. Using the `git rebase -i` option, you can how to replay those commits : 
+
+- change the replay order
+- reword a commit message
+- squash several consecutive commits into one
+- split one commit into several commits
+- choose not to replay one of the commit
+
+> The `rebase` command is **THE** tool you need to modify the history of a branch
 
 ### Git fetch
 
