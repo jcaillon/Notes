@@ -129,7 +129,7 @@ Mirroring the 3 file states, Git also has 3 areas :
 ![](images/2018-09-12-12-23-05.png)
 
 - **the workspace** (aka work area or work directory) is the directory that holds the current checkout of the files you are working on. It is a single checkout of **one version** of the project. These files are pulled out of the compressed database in the Git directory and placed on disk for you to use or modify
-- **the index** (or staging area) is where you place files you want to be part of the next commit. It is a single, large, binary file in .git/index, which lists all files in the current branch, their sha1 checksums, time stamps and the file name
+- **the index** (or staging area) is where you place files you want to be part of the next commit. It is a single, large, binary file in .git/index, which lists files with their sha1 checksums, time stamps and the file name
 - **the local repository** is your local "database". It is actually a hidden directory (.git), including an `objects` sub directory containing all versions of every file in the repo as compressed "blob" files as well as metadata to find those objects
 
 #### Why the 2 stage process
@@ -152,7 +152,7 @@ Beside being either committed/staged/modified, can also be in 1 of the 4 followi
   - unmodified = identical to last commit, this is the default state of a file after a checkout
   - modified = present in last commit but has been modified since
   - staged = has been added to the staging area and marked to be part of the next commit
-- Untracked files : everything else, the file was never been added or has been removed since the last commit
+- Untracked files : everything else, the file has never been added or has been removed since the last commit
 
 You can check the status of each file with `git status -u`.
 
@@ -171,7 +171,7 @@ sha1(
     commit message  => "initial commit"
     committer       => "Julien Caillon <julien.caillon@gmail.com>"
     author          => "Julien Caillon <julien.caillon@gmail.com>"
-    tree            => 9c435a86e664be00db0d973e981425e4a3ef3f8d
+    tree            => 0de249c435a86e664be00db0d973e981425e4a3e
     parentCommits   => [9c435a86e664be00db0d973e981425e4a3ef3f8d, ...]
 )
 ```
@@ -180,7 +180,22 @@ sha1(
 
 When staging a file, its checksum SHA1 is computed and its data is stored as a blob. The SHA1 is stored in the index (staging area).
 
-When committing, the tree object is computed and also its checksum, which is used in the commit SHA1 computation.
+Here is an example of the content of this index file :
+
+```bash
+$ git ls-files --stage
+100644 41a0f2a5a7bae99c699bfa48d424111cd8bb0591 0       .gitattributes
+100644 26d58b650bb57fa5ff2d1f123a09c3b08e242890 0       .gitconfig
+100644 dbd92ba288c72f2f9ecae5f6333788471f62a6ef 0       .gitignore
+100644 0dd65d7b42a5a4a841796a9e3e0fcb64a6db44e2 0       .gitmessage.txt
+100644 57b6318319f7973b311b9342573bb59679fb779b 0       git.md
+100644 587abb138ac2aaf29690dfed4550f8832334ef32 0       git_training.md
+100644 7c49b1d3129d954152d5973c77a53ad0e57bb190 0       images/2018-07-04-09-58-28.png
+100644 2a73e355cffb6377616b3ebac1585a1250956001 0       images/2018-09-11-17-19-06.png
+...
+```
+
+When committing, the tree object is computed from the index and its SHA1 checksum is used in the commit.
 
 > We can also see that the parent commit is part of the commit SHA1
 
@@ -288,6 +303,8 @@ git init
 touch file.txt
 ```
 
+> At this point, master it an **orphan** branch, it has no parent commit
+
 ![](images/2018-09-13-11-41-37.png)
 
 ```sh
@@ -358,11 +375,23 @@ This command has two form, one with and one without a file path.
 
 #### Git checkout without a file path
 
-This is used to "switch" branches. This command changes the 3 trees :
+This is used to "switch" branches. This command affects the 3 trees. It updates the `HEAD` to point to a new reference, updates the index with the current `HEAD` and finally update the working directory with the index.
 
-- First, it updates the `HEAD` to point to a new reference (the checked out branch)
-- Then it makes the Index equals to `HEAD`
-- Finally, it makes the Working Directory look like the Index
+We have the following situation and we do `git checkout feature` :
+
+![](images/2018-09-17-15-29-17.png)
+
+First, it updates the `HEAD` to point to a new reference (the checked out branch or commit) :
+
+![](images/2018-09-17-15-40-30.png)
+
+Then it makes the Index equals to `HEAD` (Remember that the index is "what will be added in the upcoming commit". When you just checked out a branch, you expect that nothing will be in the next commit, everything is already committed) :
+
+![](images/2018-09-17-15-41-25.png)
+
+Finally, it makes the Working Directory look like the Index :
+
+![](images/2018-09-17-15-42-02.png)
 
 It's a **safe** command, in the sense that if your working directory is **dirty** (i.e. has modified files), git will not let you checkout.
 
@@ -372,15 +401,28 @@ This is because a checkout is a destructive command for the working directory, y
 git checkout <branch> # switch to branch (does not work if your working directory is dirty)
 git checkout -b <branch> # creates a branch and moves the HEAD on it, does not modify the working directory or the index
 git checkout -b <branch> <commit-ish> # create then switch to branch from a specific commit (default to HEAD, does not work if your working directory is dirty)
+git checkout <commit-ish> # the command actually accepts a commit-ish, allowing you to checkout any commit
 ```
 
-> A ommit-ish is a commit or a tag reference or a branch reference : basically anything that git can turn into a SHA1
+> A commit-ish is a commit or a tag reference or a branch reference : basically anything that git can turn into a SHA1
 
 [Interactively show how the checkout command moves the HEAD pointer to either a reference or a commit](https://onlywei.github.io/explain-git-with-d3/#checkout)
 
 #### Git checkout with a file path
 
 The checkout command with a file path updates the index and the working directory with the version of a file from a given commit.
+
+We have the following situation and we do `git checkout -- file.txt` :
+
+![](images/2018-09-17-18-26-02.png)
+
+The index is updated to have the version of the file as it is in HEAD :
+
+![](images/2018-09-17-18-29-49.png)
+
+And then the working directory is updated with the file referred in the index :
+
+![](images/2018-09-17-18-31-20.png)
 
 ```bash
 git checkout myfile.txt # blow away all the changes since last commit (HEAD)
@@ -394,7 +436,7 @@ git init
 touch file.txt
 git add file.txt
 git commmit -m "ok"
-vi file.txt
+edit file.txt
 git add file.txt
 git status
 git checkout -- file.txt
@@ -407,7 +449,9 @@ git status
 
 What should I do on the graph above if I want to abandon the last commit I made?
 
-> It makes the current branch points to a different commit
+I should move the master reference to the previous commit (`HEAD`  will follow master).
+
+> `git reset` can make the current **branch** points to a different commit
 
 [Interactively show how the command moves the branch reference (and how HEAD follows)](https://onlywei.github.io/explain-git-with-d3/#reset)
 
@@ -429,11 +473,33 @@ git reset <mode> <commit-ish>
 
 - --soft : resets HEAD to given commit
 - --mixed (default) : same as soft + resets the index
-- --hard : same as mixed + resets the wordir
+- --hard : same as mixed + resets the working directory
+
+*Workflow of the reset command :*
+
+Initial situation :
+
+![](images/2018-09-13-15-27-46.png)
+
+If the chosen mode is `--soft`, it stops after this step : `git reset --soft 9e5e6a4`
+
+![](images/2018-09-13-15-28-17.png)
+
+If the chosen mode is `--mixed`, it stops after this step : `git reset --mixed 9e5e6a4` or simply `git reset 9e5e6a4`
+
+![](images/2018-09-13-15-28-56.png)
+
+In `--hard` reset mode, we also do this step : `git reset --hard HEAD~`
+
+![](images/2018-09-13-15-29-19.png)
 
 With the 3 options (--hard), this is almost equals to a `git checkout`! Almost because the checkout command only makes the `HEAD` point to another reference, it doesn't actually change the branch reference! Also, checkout is safe because if the working directory is dirty, the command fails. Reset however, will just discard all your modifications without warnings.
 
-Extra tips, reference commits relative to a known commit [doc](https://git-scm.com/book/en/v2/Git-Tools-Revision-Selection) :
+*Difference between checkout and reset :*
+
+![](images/2018-09-13-15-27-03.png)
+
+Extra tips, reference commits relative to a known commit ([see git help revisions](https://git-scm.com/book/en/v2/Git-Tools-Revision-Selection)) :
 
 ```bash
 git reset HEAD^ # ancestry reference - parent of latest commit
@@ -443,34 +509,17 @@ giy reset HEAD@{2} # (reflog shortname) where the HEAD was 2 moves ago
 giy reset master@{one.week.ago} # where master used to point one week ago
 ```
 
-*Difference between checkout and reset :*
-
-![](images/2018-09-13-15-27-03.png)
-
-*Workflow of the reset command :*
-
-Initial situation :
-
-![](images/2018-09-13-15-27-46.png)
-
-`git reset --soft HEAD~`
-
-![](images/2018-09-13-15-28-17.png)
-
-`git reset --mixed HEAD~` or `git reset HEAD~`
-
-![](images/2018-09-13-15-28-56.png)
-
-`git reset --hard HEAD~`
-
-![](images/2018-09-13-15-29-19.png)
-
 #### Git reset with a file path
 
-The command with a file path does not modify where the `HEAD` points to. It only *resets* the index and the working copy of a given file with the version specified in the commit.
+The command with a file path does not modify where the `HEAD` points to. It can only affect the index for a given file.
+
+Why not 3 modes?
+
+- The `--hard` mode would be strictly equal to a `git checkout` with a file path.
+- The `--soft` mode would not make sense because we don't want to update the `HEAD` when we target a file path...
 
 ```bash
-git reset -- file.txt # restore the index and working directory with the version file.txt as it is in HEAD
+git reset -- file.txt # restore the index with the version file.txt as it is in HEAD
 git reset <commit-ish> -- file.txt # specify a different commit than HEAD (default to HEAD)
 ```
 
@@ -482,7 +531,7 @@ git reset <commit-ish> -- file.txt # specify a different commit than HEAD (defau
 
 ![](images/2018-09-13-15-40-55.png)
 
-> Merging = incorporating changes from a commit to the current branch
+> Merging = incorporating all the changes from a branch to another branch
 
 ```bash
 git merge <ref>
@@ -496,13 +545,17 @@ My current branch is **dev**, what happens if I want to merge **ff**? `git check
 
 My current branch is **ff**, what happens if I want to merge **dev**? `git checkout ff && git merge dev`
 
+![](images/2018-09-17-19-41-32.png)
+
 -> The head of **ff** is an ancestor of **dev**, to incorporate all the changes in **dev** into **ff**, I simply need to move the pointer **ff** to the same commit as **dev**! This is called fast-forwarding, or a fast-forward merge.
 
-> If the current branch is an ancestor of the head of the branch to merge, git does a fast-forward merge (FF) and moves the current branch reference to the updated reference
+> If the current branch is an ancestor of the head of the branch to merge, git does a **fast-forward merge (FF)** and moves the current branch reference to the updated reference
 
 [Interactively show how the ff reference is moved in case of a fast-forward merge](https://onlywei.github.io/explain-git-with-d3/#merge)
 
 My current branch is **master**, what happens if I want to merge **dev**? `git checkout master && git merge dev`
+
+![](images/2018-09-17-19-36-25.png)
 
 -> In that case, a real merge occurs, a new commit is created with 2 parents. This new commit with have all the work done in both branches. If there are conflicts, the commit will store the resolution of this conflict.
 
