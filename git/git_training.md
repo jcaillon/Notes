@@ -274,7 +274,7 @@ If we checkout a commit #1, the `HEAD` points to a commit #1.
 > If you check out a commit instead of a branch you are in a **detached `HEAD`** state
 
 What if we try to add a commit to this `HEAD`?
-It adds the new commit #2 with the parent being the commit #1 and then the `HEAD` is moved to that new commit #2.
+It adds the new commit #2 with the parent being the commit #1 and then the `HEAD` is moved to that new commit #2. No branch reference gets updated.
 
 ![](images/2018-09-12-19-34-05.png)
 
@@ -527,11 +527,15 @@ git reset <commit-ish> -- file.txt # specify a different commit than HEAD (defau
 
 [source for this part if you didn't get my explanations](https://git-scm.com/book/en/v2/Git-Tools-Reset-Demystified)
 
+The ultimate reset/checkout cheat sheet :
+
+![](images/2018-09-18-19-40-11.png)
+
 ### Git merge
 
 ![](images/2018-09-13-15-40-55.png)
 
-> Merging = incorporating all the changes from a branch to another branch
+> Merging = integrating all the changes from a branch to another branch
 
 ```bash
 git merge <ref>
@@ -539,7 +543,7 @@ git merge <ref>
 
 My current branch is **dev**, what happens if I want to merge **ff**? `git checkout dev && git merge ff`
 
--> Since the commit pointed by **ff** is reachable from **dev**, then all the changes in the **ff** branch are already incorporated in **dev**! It is already merged. There is nothing to do!
+-> Since the commit pointed by **ff** is reachable from **dev**, then all the changes in the **ff** branch are already integrated in **dev**! It is already merged. There is nothing to do!
 
 > A branch is merged if the tip of its branch is reachable from the current branch
 
@@ -547,7 +551,7 @@ My current branch is **ff**, what happens if I want to merge **dev**? `git check
 
 ![](images/2018-09-17-19-41-32.png)
 
--> The head of **ff** is an ancestor of **dev**, to incorporate all the changes in **dev** into **ff**, I simply need to move the pointer **ff** to the same commit as **dev**! This is called fast-forwarding, or a fast-forward merge.
+-> The head of **ff** is an ancestor of **dev**, to integrate all the changes in **dev** into **ff**, I simply need to move the pointer **ff** to the same commit as **dev**! This is called fast-forwarding, or a fast-forward merge.
 
 > If the current branch is an ancestor of the head of the branch to merge, git does a **fast-forward merge (FF)** and moves the current branch reference to the updated reference
 
@@ -565,7 +569,7 @@ My current branch is **master**, what happens if I want to merge **dev**? `git c
 
 ![](images/2018-09-13-16-32-38.png)
 
-Another way to incorporate the changes of **master** into the **dev** branch is to replay the commits unique to **dev** onto the latest commit of **master**.
+Another way to integrate the changes of **master** into the **dev** branch is to replay the commits unique to **dev** onto the latest commit of **master**.
 
 We rebase **dev** onto **master**.
 
@@ -580,12 +584,27 @@ git rebase <apply_commits_of_this_branch_first> <then_apply_those_commits> # exp
 
 > The main asset of the rebase command is that it creates a LINEAR history, skipping the details of what was done on each created branch
 
-Here is the detail of how a rebase operates `git rebase <branch> <current_branch>` :
+Initial situation :
 
-- find the first common ancestor commit of `<branch>` and `<current_branch>` (the first commit reachable from both branch)
-- move all changes of `<current_branch>` made since this common commit (=which are not reachable from `<branch>`) to a temp area
-- run all `<branch>` commits, one by one
-- run all commits in the temp area, one at a time -> if there is a conflict when applying a commit, the rebase pauses, you resolve conflicts and then it can resume
+![](images/2018-09-18-12-11-23.png)
+
+`git checkout dev && git rebase master dev` :
+
+Find the first common ancestor commit of `master` and `dev` (the first commit reachable from both branch)
+
+![](images/2018-09-18-11-10-52.png)
+
+Move all changes of `dev` made since this common commit (=which are not reachable from `master`) to a temp area, the `HEAD` and `dev` are now pointing to the common ancestor commit. The changes on `master` unreachable from `dev` are also put in a temp area but the `master` reference does not move.
+
+![](images/2018-09-18-12-22-30.png)
+
+Run all commits unique to `master`, one by one :
+
+![](images/2018-09-18-12-29-26.png)
+
+Run all commits in the temp area, one at a time -> if there is a conflict when applying a commit, the rebase pauses, you resolve conflicts and then it can resume
+
+![](images/2018-09-18-12-29-42.png)
 
 By default, the `rebase` command simply replays all the commits in the temp area one at a time and in the same order. Using the `git rebase -i` option, you can how to replay those commits : 
 
@@ -603,9 +622,7 @@ What if we want to share our local work with the world?
 
 We just need a copy of our repo accessible.
 
-![](images/2018-09-13-17-01-52.png)
-
-In GIT we have remotes :
+> In GIT, a **remote** represents a distant server (= remote server)
 
 - A remote is the image of git repo in a distant server
 - We can access a distant repo using HTTPS or SSH
@@ -614,26 +631,44 @@ In GIT we have remotes :
 You can have several remotes configured for your local repo, they can have arbitrary name and are associated with a URL. The default remote name (when cloning a repo) is `origin`.
 
 > The command `git fetch` allows you to get/update the copy of distant repo into your local repo
-> 
+>
 > The references fetched from the remote repo in your local repo are prefixed by the name of the remote
+
+![](images/2018-09-13-17-01-52.png)
 
 In the graph above, you can see that `origin/master` points to the same commit as our local branch `master`. This is because, in the `origin` repo, the master branch also points to this commit (note the SHA1).
 
 [Show multiple remote branches updates with a git fetch command](https://onlywei.github.io/explain-git-with-d3/#fetch)
 
-Once we have the remote image of the repo, we can choose to merge/rebase the remote branches with our local branches.
+Our initial situation is :
 
-[Interactively show how we update our local master branch with the remote repo](https://onlywei.github.io/explain-git-with-d3/#fetchrebase)
+![](images/2018-09-18-18-22-25.png)
+
+After a `git fetch` :
+
+![](images/2018-09-18-18-23-37.png)
 
 > When your local branch has commits that the remote doesn't have, your local branch is AHEAD of the remote branch
 >
 > When the remote has commits that your local branch doesn't have, your local branch is BEHIND the remote branch
->
-> Beware that the rebase command can **rewrite the history** of a branch, you should never rewrite the history of a public branch and GIT will forbid you tu push the branch if you do
 
-[Demo where we rewrite the history of the master branch](https://onlywei.github.io/explain-git-with-d3/#pull)
+Once we have the remote image of the repo, we can choose to merge/rebase the remote branches with our local branches.
+
+The initial state is :
+
+![](images/2018-09-18-18-47-06.png)
+
+After a `git fetch`, our local repo :
+
+![](images/2018-09-18-18-48-28.png)
+
+We integrate the changes of `origin\master` in our local branch `master` using `git rebase origin/master` :
+
+![](images/2018-09-18-18-50-54.png)
 
 Note how when we rebase master onto dev, the previous head commit of master becomes headless and the commit added to the current branch has a different SHA1 than the original head commit of master. Even if this commit holds the same "patch" (same modifications), the commit SHA1 has changed since the parent of this commit has changed.
+
+[Interactively show how we update a local private branch my-branch with the remote repo](https://onlywei.github.io/explain-git-with-d3/#fetchrebase)
 
 ### Git pull
 
@@ -643,15 +678,48 @@ If it is not possible to fast-forward merge, a new merge commit (or conflict res
 
 **It is recommended to always decomposed `git fetch` and then `git rebase` or `git merge`.** You can also use `git pull --rebase` to substitute the merge with a rebase.
 
+[Interactively show how a new commit is created on git pull](https://onlywei.github.io/explain-git-with-d3/#pull)
+
 ### Git push
 
 Finds all the commit of a local branch that do not exist for the corresponding remote branch, sends them, and moves the remote branch reference to the new head.
 
+```bash
+git push <remote> <reference>
+git push # push current branch to default remote
+```
+
 You can also push tags, in which case it finds all the commits reachable by the tags that are not on the remote, pushes them and add the remote tag reference.
 
+From the initial situation below, where our local branch is AHEAD of origin by 1 commit :
+
+![](images/2018-09-18-19-08-39.png)
+
+After a `git push origin master` :
+
+![](images/2018-09-18-19-09-53.png)
+
 > By default, every push must cause a fast-forward merge on the remote server or the push will be rejected
+>
+> Beware that the rebase command can **rewrite the history** of a branch, you should never rewrite the history of a public branch and GIT will forbid you tu push the branch if you do
 
 [Example where the local branch is AHEAD of 1 commit and BEHIND of 1 commit with the remote](https://onlywei.github.io/explain-git-with-d3/#push)
+
+The example below shows the case of a push that will not cause a fast-forward on the remote, because our local branch is AHEAD by 1 commit and BEHIND by 1 commit compared to origin/master.
+
+![](images/2018-09-18-19-03-47.png)
+
+By default, in this situation, git will prevent the push from happening.
+
+### Git cherry-pick
+
+I want to replay the commit in blue on my master branch :
+
+![](images/2018-09-18-19-45-49.png)
+
+`git cherry-pick f5b32c8` :
+
+![](images/2018-09-18-19-47-59.png)
 
 ## Command recap
 

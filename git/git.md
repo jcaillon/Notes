@@ -34,7 +34,7 @@ git lol
 
 ### git init
 
-Initializes a git repository – creates the initial ‘.git’ directory in a new or existing project.
+Initializes a git repository – creates the initial `.git` directory in a new or existing project.
 
 Good to know, you can define a new template for the initial .git folder. This allows you to modify the default hooks (for instance).
 
@@ -56,7 +56,7 @@ Adds changes in files in your working directory to your index (=staging area). E
 ```bash
 git add -- file.md file2.md # stage new files (start to track them), use -- to separate file names from potential add options
 git add --all
-git add -A # same as above, update the index to be equals to the working directory, staging all the files
+git add -A # same as above, update the index to be equals to the working directory, staging all the tracked or untracked files
 git add *.txt # all .txt in current directory
 git add "*.txt" # all .txt in project
 git add docs/*.txt
@@ -76,9 +76,17 @@ git mv <source> <dest>
 Removes files from your index and your working directory so they will stopped being tracked.
 
 ```bash
-git rm README # deleted from the local filesystem and untracked
-git rm --README # only unstage, not deleted from fs
-git rm --cached README # equivalent to above, unstage and remove paths only from the index
+git rm -- README # deleted from the local filesystem and the index (file becomes untracked)
+git rm --cached README # only unstage, remove the paths only from the index and not from the working directory
+```
+
+### git clean
+
+Cleans untracked files from the working directory
+
+```bash
+git clean -nd # doesn't clean anything, dry run to see what happens
+git clean -fd # clean all including directories
 ```
 
 ### git commit
@@ -86,8 +94,8 @@ git rm --cached README # equivalent to above, unstage and remove paths only from
 Takes all of the changes staged in the index (that have been ‘git add’ed), creates a new commit object pointing to it, and advances the branch to point to that new commit.
 
 ```bash
-git commit # will open the commit template for you to modify
-git commit -m "description" # take a snapshot of the stage area
+git commit # will open the commit message template for you to modify
+git commit -m "description" # take a snapshot of the stage area with the given message
 git commit -a -m "description" # -a add changes from all tracked files (but new files = untracked are not affected)
 git commit --amend -m "new message" # change the last commit (you can specify a new message like here or the previous one will be used by default). Was was staged is added to the last commit
 git commit -C <sha> # reuse a commit message / author / date
@@ -191,14 +199,7 @@ _git reset mode commit_ :
 - --mixed : + resets the index (modified files are all unstaged)
 - --hard : + resets the wordir, all modified files are lost.
 
-### git clean
-
-Cleans untracked files from the working directory
-
-```bash
-git clean -nd # doesn't clean anything, dry run to see what happens
-git clean -fd # clean all including directories
-```
+![](images/2018-09-18-19-40-11.png)
 
 ### git merge
 
