@@ -721,20 +721,31 @@ I want to replay the commit in blue on my master branch :
 
 ![](images/2018-09-18-19-47-59.png)
 
-## Command recap
+----
 
-![](images/2018-09-11-18-08-20.png)
+## Vocabulary
 
-![](images/2018-09-11-19-33-09.png)
+- **reachable** : All of the ancestors of a given commit are said to be "reachable" from that commit. More generally, one object is reachable from another if we can reach the one from the other by a chain that follows tags to whatever they tag, commits to their parents or trees, and trees to the trees or blobs that they contain
+- **Headless** : not reachable from a reference (and eligible to be garbage collected)
+- **dangling object** : an unreachable object (there is no reference to it from any reference or object in the repo)
+- **detached HEAD** : Normally the HEAD stores the name of a branch, and commands that operate on the history HEAD represents operate on the history leading to the tip of the branch the HEAD points at. However, Git also allows you to check out an arbitrary commit that isn’t necessarily the tip of any particular branch. The HEAD in such a state is called "detached"
+- **Tip of a branch** : most recent commit of a branch = branch HEAD
+- **head** : a named reference to the commit at the tip of a branch, stored in `$GIT_DIR/refs/heads/`
+- **HEAD** : the current branch. Is a reference of one of the heads in your repo, except when using a detached HEAD (in that case it is directly a commit HASH)
+- **object** : unit of storage identified by the SHA-1 of its content + history, they are stored in `$GIT_DIR/objects/`
+- **ref** : a name that begins with ref/ (e.g. refs/heads/master) that points to an object or another ref (a symbolic ref). They can be abbreviated when used in command (HEAD for instance). Stored in `$GIT_DIR/refs` see `git help revisions`. _A reference is what makes a commit reachable!_
+- **symref** : symbolic reference, instead of containing the SHA, it is of the format refs/some/thing, are a simpler form like HEAD
+- **tag** : stored under `$GIT_DIR/refs/tags/`, points to a object (commit or another tag)
+- **commit-ish** : commit object, tag object, basically anything that git can turn into a SHA1
+- **tree-ish** : either a tree object (e.i. list of files/directory), tag object or commit-ish
+- **dirty working directory** : a working dir is dirty if there are files modified compared to the revision referenced by the current HEAD
+- **fast-forward** : a special type of merge where the first common ancestor of the merged branched is also the tip of the branch you merge onto. This will simply update the revision of the branch you are merging onto
+- **merge base** : first common ancestor (reachable by both branch)
+- **staging area** : aka index
 
-[See also the git cheat sheet page.](./git.md)
+----
 
 ## The git repository
-
-```sh
-git init
-git clone <url>
-```
 
 What is the content of the `.git` folder?
 
@@ -768,25 +779,76 @@ cat .git/packed-refs
 
 ----
 
-## Vocabulary
+## Other commands
 
-- **reachable** : All of the ancestors of a given commit are said to be "reachable" from that commit. More generally, one object is reachable from another if we can reach the one from the other by a chain that follows tags to whatever they tag, commits to their parents or trees, and trees to the trees or blobs that they contain
-- **Headless** : not reachable from a reference (and eligible to be garbage collected)
-- **dangling object** : an unreachable object (there is no reference to it from any reference or object in the repo)
-- **detached HEAD** : Normally the HEAD stores the name of a branch, and commands that operate on the history HEAD represents operate on the history leading to the tip of the branch the HEAD points at. However, Git also allows you to check out an arbitrary commit that isn’t necessarily the tip of any particular branch. The HEAD in such a state is called "detached"
-- **Tip of a branch** : most recent commit of a branch = branch HEAD
-- **head** : a named reference to the commit at the tip of a branch, stored in `$GIT_DIR/refs/heads/`
-- **HEAD** : the current branch. Is a reference of one of the heads in your repo, except when using a detached HEAD (in that case it is directly a commit HASH)
-- **object** : unit of storage identified by the SHA-1 of its content + history, they are stored in `$GIT_DIR/objects/`
-- **ref** : a name that begins with ref/ (e.g. refs/heads/master) that points to an object or another ref (a symbolic ref). They can be abbreviated when used in command (HEAD for instance). Stored in `$GIT_DIR/refs` see `git help revisions`. _A reference is what makes a commit reachable!_
-- **symref** : symbolic reference, instead of containing the SHA, it is of the format refs/some/thing, are a simpler form like HEAD
-- **tag** : stored under `$GIT_DIR/refs/tags/`, points to a object (commit or another tag)
-- **commit-ish** : commit object, tag object, basically anything that git can turn into a SHA1
-- **tree-ish** : either a tree object (e.i. list of files/directory), tag object or commit-ish
-- **dirty working directory** : a working dir is dirty if there are files modified compared to the revision referenced by the current HEAD
-- **fast-forward** : a special type of merge where the first common ancestor of the merged branched is also the tip of the branch you merge onto. This will simply update the revision of the branch you are merging onto
-- **merge base** : first common ancestor (reachable by both branch)
-- **staging area** : aka index
+### Command recap
+
+![](images/2018-09-11-18-08-20.png)
+
+![](images/2018-09-11-19-33-09.png)
+
+[See also the git cheat sheet page.](./git.md)
+
+### Practice (todo)
+
+```bash
+git config --edit
+git config  --edit --global
+git config --list
+git config --global alias.ceg "config --edit --global"
+git config alias.ceg
+
+# ---
+
+git init
+
+touch file.md
+touch file2.md
+git status
+git add -- file.md file2.md
+git add --all
+git status --cached
+
+git commit
+git commit -m "message"
+git status
+git log
+
+git mv file.md file3.md
+git rm file2.md
+git status
+git checkout file2.md
+git touch new.md
+git add new.md
+git status
+git reset -- new.md
+
+# ---
+
+git clone <url>
+git branch
+git branch -a
+git branch mybranch
+git branch -d mybranch
+git branch myfeature
+git branch
+git checkout myfeature
+git checkout -b <branch> origin/<branch> # create + switch to the new local branch from origin + track a remote branch
+
+git checkout dev_feature
+git merge origin/developpement
+git mergetool
+```
+
+----
+
+## Classic git worflow
+
+*This is not the github workflow!*
+
+https://nvie.com/posts/a-successful-git-branching-model/?
+
+![workflow](images/2018-07-04-09-58-28.png)
 
 ----
 

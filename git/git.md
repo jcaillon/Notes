@@ -17,7 +17,6 @@ git config --global user.email "mymail@truc.com"
 git config --global color.ui true # pretty cmd line colors
 git config --global core.editor "'C:/Program Files/Notepad++/notepad++.exe' -multiInst -notabbar -nosession -noPlugin"
 git config --global core.editor "'C:/data/outils/Sublime Text Build 3126 x64/sublime_text.exe' --wait --new-window"
-git config --global merge.tool E:/outils/winmerge++.exe
 git config http.proxy http://proxy:8080 # for local repo only
 git config user.name # get current value for this property
 git config --list
@@ -29,7 +28,6 @@ git config core.hooksPath ~/.githooks
 git config core.hooksPath C:/data/repo/_gitlab/GitHooks/hooks
 git config --global pull.rebase true # default the pull to fetch + rebase instead of merge
 git config --global rerere.enabled true # will remember the conflict resolution and replay them if encountered again
-git lol
 ```
 
 ### git init
@@ -54,13 +52,12 @@ git clone --recurse-submodules <url> # option to clone + init and update all sub
 Adds changes in files in your working directory to your index (=staging area). Equivalent to `git stage`.
 
 ```bash
-git add -- file.md file2.md # stage new files (start to track them), use -- to separate file names from potential add options
+git add -- file.md file2.md # stage new files (add them to the index), use -- to separate file names from potential add options
 git add --all
-git add -A # same as above, update the index to be equals to the working directory, staging all the tracked or untracked files
+git add -A # same as above, update the index to be equals to the working directory, staging all the tracked and untracked files
 git add *.txt # all .txt in current directory
 git add "*.txt" # all .txt in project
 git add docs/*.txt
-git add -i # interactive mode... kind of useless
 ```
 
 ### git mv
@@ -68,7 +65,7 @@ git add -i # interactive mode... kind of useless
 Move or rename a file, directory or symlink
 
 ```bash
-git mv <source> <dest>
+git mv <source> <dest> # updates the working directory and the index in one go
 ```
 
 ### git rm
@@ -76,8 +73,8 @@ git mv <source> <dest>
 Removes files from your index and your working directory so they will stopped being tracked.
 
 ```bash
-git rm -- README # deleted from the local filesystem and the index (file becomes untracked)
-git rm --cached README # only unstage, remove the paths only from the index and not from the working directory
+git rm -- README # deleted from the working directory and the index
+git rm --cached README # remove the paths only from the index and not from the working directory
 ```
 
 ### git clean
@@ -95,9 +92,9 @@ Takes all of the changes staged in the index (that have been ‘git add’ed), c
 
 ```bash
 git commit # will open the commit message template for you to modify
-git commit -m "description" # take a snapshot of the stage area with the given message
+git commit -m "description" # take a snapshot of the staging area with the given message
 git commit -a -m "description" # -a add changes from all tracked files (but new files = untracked are not affected)
-git commit --amend -m "new message" # change the last commit (you can specify a new message like here or the previous one will be used by default). Was was staged is added to the last commit
+git commit --amend -m "new message" # change the last commit (you can specify a new message like here or the previous one will be used by default). What is staged is added to the last commit
 git commit -C <sha> # reuse a commit message / author / date
 ```
 
@@ -108,7 +105,9 @@ git commit -C <sha> # reuse a commit message / author / date
 
 ### git status
 
-Shows you the status of files in your index versus your working directory. It will list out files that are untracked (only in your working directory), modified (tracked but not yet updated in your index), and staged (added to your index and ready for committing).
+Shows you the status of all the files in your working directory that are not *unmodified*.
+
+It will list out files that are untracked (only in your working directory), modified (tracked but not yet updated in your index), staged (added to your index and ready for committing), deleted and renamed.
 
 ```bash
 git status # show changes to be commited
@@ -117,16 +116,16 @@ git status -sb # shorter version
 
 ### git branch
 
-Lists existing branches, including remote branches if `-a` is provided. Creates a new branch if a branch name is provided. Branches can also be created with `-b` option to `git checkout`.
+Lists existing branches or creates a new branch.
 
-Branches are *savepoints*. Since they are references, they make commits reachable. Creating a commit is thus a way to nail down part of the graph that you might want to come back to later.
+Branches are references, they make commits reachable. Creating a commit is thus a way to nail down part of the graph that you might want to come back to later.
 
 And because neither git merge nor git rebase will change your existing commits (remember, a commit's ID is a hash of its contents and its history), you can create a temporary branch any time you want to try something you're even just a little bit unsure about.
 
 ```bash
-git branch <branch> # create new branch
+git branch <branch> # create new branch, pointing to the HEAD commit
 git branch <branch> <commit-ish> # can be a commit sha, a branch name, tag
-git branch <branch> origin/<branch> # create a local branch that tracks a remote branch
+git branch <branch> <remote>/<branch> # create a local branch that tracks a remote branch
 git branch -u <remote>/<branch> <branch> # set up the remote branch to track for the local branch (to push/merge)
 git branch -u <remote>/<branch> # same for current branch
 
@@ -139,9 +138,7 @@ git branch -m <oldname> <newname> # rename branch
 git branch -a -v --no-merged # list unmerged branch
 ```
 
-Deleted branches
-
-A branch deleted with `git branch -D <branch>` : you can find the last commit of that branch and re-create the branch that points to it.
+Unintentional deletion of a branch `git branch -D <branch>` : you can find the last commit of that branch and re-create the branch that points to it.
 
 ```bash
 git log --walk-reflogs # see the reflog info in full log format
@@ -152,43 +149,34 @@ git lol # we got our banch + commits back
 
 ### git checkout
 
-Switch branches or restore working tree files.
-
-Checks out a different branch – makes your working directory look like the tree of the commit that branch points to and updates your HEAD to point to this branch now, so your next commit will modify it.
+Switch branches (move the HEAD, update the index and working directory accordingly) or restore files (restore the index and the working tree).
 
 ```bash
 git checkout <branch> # switch to branch (does not work if your working directory is dirty)
 git checkout -b <branch> # creates a branch and moves the HEAD on it, does not modify the working directory or the index
-git checkout -b <branch> <commit-ish> # create then switch to branch from a specific commit (default to HEAD, does not work if your working directory is dirty)
-git checkout -b <branch> origin/<branch> # create + switch to the new local branch from origin + track a remote branch
-git checkout <feature_branch_on_remote> # if feature does not exist locally but exists on a remote, it is equals than the command above
+git checkout -b <branch> <commit-ish> # create then switch to branch from a specific commit (does not work if your working directory is dirty)
+git checkout -b <branch> <remote>/<branch> # create + switch to the new local branch from origin + track a remote branch
+git checkout <remote>/<branch> # if branch does not exist locally but exists on a remote, it is equals to the command above
+git checkout --orphan binaries # creates a new branch without history
+```
 
+```bash
 git checkout LICENSE # blow away all the changes since last commit
 git checkout HEAD -- LICENSE # specify a commit to rollback this file to
-
-# checkout the file from the last commit of a branch
-git checkout <branch> -- bin/gct-cli.exe
-
-# Add a branch w/o history
-git checkout --orphan binaries
+git checkout <commit-ish> -- bin/gct-cli.exe # checkout the file from the specified commit
 ```
 
 ### git reset
 
-Reset current HEAD to the specified state.
-
-Resets your index and working directory to the state of your last commit, in the event that something screwed up and you just want to go back.
+Update your current branch to make it point to a different commit, optionally updating the index and the working directory accordingly. Can also *unstage* (restore the index for) a given file path.
 
 ```bash
-git reset -- file.txt # restore the index and working directory with the version file.txt as it is in HEAD
+git reset file.txt # restore the index with the version file.txt as it is in HEAD
 git reset <commit-ish> -- file.txt # specify a different commit than HEAD (default to HEAD)
-git reset --soft HEAD^ # undo last commit, all files ready to be commited again, moving to the commit BEFORE HEAD = HEAD^
-git reset --hard HEAD^ # undo last commit and reset your working dir as well as the index
-git reset --hard HEAD^^ # undo last 2 commit
+git reset --soft HEAD^ # undo last commit, updating the current branch to point to the commit BEFORE HEAD = HEAD^, doesn't change the index nor the working directory
+git reset --mixed HEAD^ # same as above plus also resets your index to be equal to HEAD^
+git reset --hard HEAD^ # same as above plus also resets your working directory to be equal to your index
 git reset HEAD~5 # 5 commits ago, defaults to --mixed so it will reset the index as well as the HEAD
-# see also...
-git help revisions
-
 git reset --hard origin/master # this makes the local branch strictly equal to the remote branch
 git reset <mode> <commit-ish>
 ```
@@ -197,7 +185,7 @@ _git reset mode commit_ :
 
 - --soft : only reset HEAD to commit, leave workdir/index untouched, files are still ready to be commited
 - --mixed : + resets the index (modified files are all unstaged)
-- --hard : + resets the wordir, all modified files are lost.
+- --hard : + resets the wordir, all modified files are lost
 
 ![](images/2018-09-18-19-40-11.png)
 
@@ -205,11 +193,13 @@ _git reset mode commit_ :
 
 Merges one or more branches into your current branch and automatically creates a new commit if there are no conflicts. When the merge resolves as a fast-forward, only update the branch pointer, without creating a merge commit.
 
+Integrate the changes of a branch into another branch. Makes all the commits of the merged branches reachable by a newly created commit with several parents.
+
 ```bash
-git merge <ref>
-git merge --no-commit <ref> # does the merge but does not do the final commit, allows you to verify/modify the merge commit
+git merge <ref> # merge ref with your current branch
+git merge --no-commit <ref> # does the merge but does not do the final commit, allows you to verify/modify the merge commit even if it has no conflicts
 git merge --squash <ref> # allows you to create a single commit on top of the current branch whose effect is the same as merging another branch
-git merge -m "" <ref>
+git merge -m "" <ref> # specify the new commit message
 ```
 
 ```bash
@@ -228,37 +218,25 @@ i # insert mode
 
 ### git rebase
 
-An alternative to merge that rewrites your commit history to move commits since you branched off to apply to the current head instead. Reapply commits on top of another base tip.
+Replay commits on top of another base tip. An alternative to merge that rewrites the commits made since you branched off on top of (after) the current head instead.
 
 ```bash
-git checkout <currentbranch>
-git rebase <branch>
-# OR...
+git rebase # will rebase from <remote>/<currentbranch> if it exists
+git rebase <branch> # replay the commits reachable from the current branch and not reachable from <branch> on top of <branch>
 git rebase <apply_commits_of_this_branch_first> <then_apply_those_commits>
 ```
 
-1. find the first common ancestor commit of <branch> and <currentbranch> (the first commit reachable from both branch)
-2. move all changes of <currentbranch> made since this common commit (=which are not in <branch>) to a temp area
-3. run all <branch> commits
-4. run all commits in the temp area, one at a time
+1. find the first common ancestor commit of `branch` and `currentbranch` (the first commit reachable from both branch)
+2. move all changes of `currentbranch` made since this common commit (=which are not in `branch`) to a temp area
+3. resets your `HEAD` to the same commit as `branch`
+4. replay all commits in the temp area, one at a time, moving `HEAD` on each new commit replayed
+
+*rebase conflicts :*
 
 ```bash
-git rebase # will rebase from origin/<currentbranch> if it exists
-
-# merge feature to master :
-git checkout feature
-git rebase master # at this point, our local feature branch has been modified and is no longer the same as the origin! it has all the commits
-git checkout master
-git merge feature # this will be a fast-forward merge
-```
-
-rebase conflicts
-
-```bash
-git status
-# edit unmerged files
+git status # edit unmerged files
 git add file.txt # mark as resolved
-# At this point (or you selected edit as the rebase word, you can also make new commits)
+# (if you selected edit as the rebase operation, you can also make new commits to split this commit)
 # touch newfile & git add --all & git commit -m "adding new file"
 git rebase --continue # --skip/--abort
 ```
@@ -270,30 +248,39 @@ git rebase -i HEAD~3 # alter the last 3 commits of this branch in interactive mo
 # it alters every commit AFTER the one you specify, so git rebase HEAD wouldn't do anything
 ```
 
-beware :
+*beware :*
 
 Never rebase a public branch (e.g. master, release branch, shared dev branch...). You want to rebase ONTO a local (or single user) branch then merge fast-forward in the public branch! That way, you don't change the history on the public branch, you just fast-forward new commits.
 
-TODO :
+*Scenarii where you want to squash several commits of a feature branch into 1 :*
 
 ```bash
-# if you go for the merge instead or rebase, force git not to use fast-forward when merging onto master, so you get a merge commit when merging a feature branch, even if you could fast forward it
-git checkout master
-git merge --no-ff feature_branch
-# Create the merge request
+# Create the merge request, there are too many commits, we want to squash them manually (gitlab can do that auto though...)
 git checkout feat
 git rebase -i HEAD~x (squash them)
 git push -f
 # (pull request has been updated, you only see 1 commit now)
-# then integrate the changes of master into the feat
+```
+
+*Scenarii where need to rebase your feature branch onto master before merging :*
+
+```bash
+# Create the merge request, the feature branch is behind master and needs a rebase (gitlab also does that auto)
+git checkout feat
 git rebase master
-# cool, now we can fast forward on master
+# now we can merge feat on master as a fast forward
 # you can just do it on the interface of gitlab
 # or do it here
 git push -f # push the new changes on feat
 git checkout master
 git merge -ff feat
 # at this point, the pull request should be closed!
+```
+
+```bash
+# if you go for the merge instead or rebase, force git not to use fast-forward when merging onto master, so you get a merge commit when merging a feature branch, even if you could fast forward it
+git checkout master
+git merge --no-ff feature_branch
 ```
 
 #### git merge/rebase with confidence
@@ -334,13 +321,13 @@ git reset --hard HEAD
 git stash push # equals git stash
 git stash push "ma super modif" # provide a message that will be displayed for this stash
 git stash push --keep-index # the staging area is not stashed!
-git stash push --include-untracked # the staging area is not stashed!
-git stash apply # brings stashed files back
+git stash push --include-untracked # also stashes untracked files
 git stash list # list the stashed files (the names are in the first column)
 git stash list --stat # git stash list can take the same options as the git log
 git stash apply <name> # applies a specific stash name, i.e. git stash apply stash@{0}
 git stash drop # drops the top stash
 git stash pop # equals apply + drop
+git stash apply # brings stashed files back without dropping the stash (you can reapply it elsewhere)
 git stash show <name> # show details on a particular stack
 git stash show # same but default to first stack
 git stash show --patch # also accepts any options as git log
@@ -350,24 +337,30 @@ git stash clear # get rid of all stash in the list
 
 ### git tag
 
-Tags a specific commit with a simple, human readable handle that never moves.
+Tags a specific commit with a simple, human readable reference that never moves.
 
 ```bash
 git tag # list all tags
-git checkout <tag>
-git tag -a <tag> -m "description" # create a new tag
-git tag <tag> # create a new tag
-git push --tags # push tags to remote
+git tag <tag> # create a new simple tag
+git tag <tag> <commit-ish> # create a new simple tag pointing to the given commit
+git tag -a -m "description" <tag>  # create a new tag with a message
+git push <remote> <tag> # push the tag to a remote
+git push <remote> --tags # push all the tags to a remote
 git push origin :tagname # delete a tag
 ```
+
+Contrary to branches, that can point to different commits depending on the local/remote, a tag always point to a particular commit. A remote can have or not have a tag, but if it does, the tag is strictly the same (= points to the same commit) whatever the remote. This is why there is no `<remote>/<tag>`.
 
 ### git fetch
 
 Fetches all the objects that a remote version of your repository has that you do not yet so you can merge them into yours or simply inspect them.
-Fetching a branch means to get the branch’s head ref from a remote repository, to find out which objects are missing from the local object database, and to get them, too.
+
+Fetching a branch means to get the branch’s head reference from a remote repository, to find out which objects are missing from the local object database, and to get them too.
 
 ```bash
-git fetch --prune # fetch + git remote prune <remote>
+git fetch --prune # fetch all the branches and delete obsolete <remote>/<branch> present in your local repo (= fetch + remote prune <remote>)
+git fetch --prune-tags # prune local tags not existing in the remote
+git fetch --tags # fetch all the distant tags into your repo
 ```
 
 ### git pull
@@ -383,11 +376,11 @@ See `pull.rebase`, `branch.<name>.rebase` and `branch.autoSetupRebase` in git-co
 Pushes all the objects that you have that a remote version does not yet have to that repository and advances its branches
 
 ```bash
-git push <remote> <branch>
-git push # push current branch to default remote
-git push -u <remote> <ref> # where ref/branch is the local branch to push, -u allows to start tracking the local ref with the remote
+git push <remote> <reference>
+git push # push the current branch to default remote
+git push -u <remote> <branch> # where <branch> is the local branch to push, -u allows to start tracking the local branch
 git push <remote> --all # all branches
-git push <remote> --tags # tags
+git push <remote> --tags # all tags
 git push <remote> :<ref> # delete remote ref/branch (still need to delete the local branch)
 git push <remote> <ref> # links local ref/branch to remote branch = tracking + push
 ```
@@ -397,21 +390,19 @@ git push <remote> <ref> # links local ref/branch to remote branch = tracking + p
 Lists all the remote versions of your repository, or can be used to add and delete them.
 
 ```bash
-git remote add origin https://git/repo/proj.git # add a new remote, where origin is the remote name
-git remote add <name> <url>
+git remote add <name> <url> # add a new remote, with the given remote name
 git remote rm <name> # delete a remote
 git remote rename <oldname> <name>
-git remote -v # list remotes
-git remote prune origin # clean up (in your local repo) all deleted remote branches
-git remote show origin # show which branches are tracked for the given remote
+git remote -v # list all the remotes and their urls
+git remote prune <remote> # clean up (in your local repo) all deleted remote branches
+git remote show <remote> # show which branches are tracked for the given remote
 ```
 
 Create a local (on the local filesystem) repo :
 
 ```bash
 git init --bare remote.git
-# clone it :
-git clone remote.git local
+git clone remote.git localrepo # clone it
 ```
 
 ### git revert
@@ -421,9 +412,6 @@ Revert some existing commits (creates a new commit to cancel an earlier commit).
 ```bash
 git revert [--[no-]edit] [-n] [-m parent-number] [-s] [-S[<keyid>]] <commit>
 git revert HEAD~3
-git revert --continue
-git revert --quit
-git revert --aborthow which branches are tracked for the given remote
 ```
 
 ### git submodule
@@ -431,7 +419,7 @@ git revert --aborthow which branches are tracked for the given remote
 A parent will point to a specific commit of a submodule. Submodules can be updated as regular git repo inside their parent's repo.
 
 ```bash
-git submodule add git@example.com:project.git	
+git submodule add git@example.com:project.git
 git submodule update --init --recursive # this will add the submodules to the .git/config + clone + checkout them
 ```
 
@@ -482,7 +470,7 @@ git checkout master
 git merge <commit_sha> # merge it into master
 ```
 
-So when working with submodules, you first have to push the submodule then the parent project. If you forget to push the submodule, the parent will point to a commi that does not exist in the remote repo! To make sure you don't forget :
+So when working with submodules, you first have to push the submodule then the parent project. If you forget to push the submodule, the parent will point to a commit that does not exist in the remote repo! To make sure you don't forget :
 
 ```bash
 git push --recurse-submodules=check # will abort push if a submodule has been forgotten
@@ -492,11 +480,11 @@ git config alias.pushall "push --recurse-submodules=on-demand"
 
 ### git cherry-pick
 
-Apply the changes introduced by some existing commits
+Apply the changes introduced by some existing commits.
 
 ```bash
 git checkout <branch_on_which_to_apply_commit>
-git cherry-pick <commit_sha>
+git cherry-pick <commit_sha> <commit_sha2> # and so on
 # notice that the new commit sha might be different since they might not have the same parent commit!
 git cherry-pick --edit <sha> # edit commit message
 git cherry-pick --no-commit <sha1> <sha2>... # applies a commit to our working dir but does not commit, allows to combine several commits into one
@@ -530,10 +518,13 @@ git diff HEAD # diff between last commit and current state
 git diff HEAD^ # parent of latest commit
 git diff HEAD^^ # grandparent of latest commit
 git diff HEAD~5 # 5 commits ago
-# see also...
-git help revisions
+```
+
+See also `git help revisions`.
+
+```bash
 git diff HEAD^..HEAD
-git diff <SHA1>..<SHA2>
+git diff <SHA1>..<SHA2> # all commits reachable from SHA2 that aren’t reachable from SHA1
 git diff <branch1> <branch2>
 ```
 
@@ -551,7 +542,7 @@ git log --since=1.day.ago
 git log --until=1.minute.ago
 git log --since=2000-01-01 --until=1.minute.ago
 git log master..experiment # all commits reachable from experiment that aren’t reachable from master
-git log ^master experiment # same as above
+git log ^master experiment # same as above (means reachable from experiment but not ^ from master)
 git log experiment --not master # same as above
 git log master...experiment #  all the commits that are reachable by either of two references but not by both of them
 git log --left-right master...experiment # same but you also have the info : if the commit belongs to the left branch or the right branch
@@ -650,7 +641,7 @@ allownonascii=$(git config --bool hooks.allownonascii)
 if [ "$allownonascii" != "true" ] then
 ```
 
-Interesting reading : 
+Interesting reading :
 
 - [in french, sry](https://delicious-insights.com/fr/articles/git-hooks/#c-t-client-machine-locale)
 - https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks
@@ -682,48 +673,3 @@ Wrapper script to quickly run a web server with an interface into your repositor
 ### git-daemon
 
 Runs a simple, unauthenticated wrapper on the git-upload-pack program, used to provide efficient, anonymous and unencrypted fetch access to a Git repository.
-
----
-
-## Git worflow
-
-Classic git workflow :
-
-https://nvie.com/posts/a-successful-git-branching-model/?
-
-![workflow](images/2018-07-04-09-58-28.png)
-
----
-
-## Work in progress
-
-Ways to represent a graph...
-
-```git
-------------
-*   Merge branch 'report-a-bug'
-|\
-| * Add the feedback button
-* | Merge branch 'refactor-button'
-|\ \
-| |/
-| * Use the Button class for all buttons
-| * Extract a generic Button class from the DownloadButton one
-------------
-
-o---o---o---o---o---o---o---o  master
-	\			 \
-	o---o---o---o---o	  o'--o'--o'--o'--o'--M	 subsystem
-			\			     /
-			*---*---*-..........-*--*  topic
-
-*   ebcf543 (HEAD -> 3.0.0/ft/issue2) Merge branch 'v3.0.0/ft/issue1' into 3.0.0/ft/issue2
-|\
-| * 559b1f3 v3.0.0/ft/issue1 second commit
-| * 269d9e4 3.0.0/ft/issue1 mon truc
-* | 4c7dacc 3.0.0/ft/issue2 derp
-* | 706aa59 3.0.0/ft/issue2 thrid
-|/
-* 295c53b (origin/v1.0.0_rel, origin/HEAD, v1.0.0_rel, feature/fuck) init - initialisation du repo
-
-```
