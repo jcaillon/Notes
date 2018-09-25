@@ -789,57 +789,6 @@ cat .git/packed-refs
 
 [See also the git cheat sheet page.](./git.md)
 
-### Practice (todo)
-
-```bash
-git config --edit
-git config  --edit --global
-git config --list
-git config --global alias.ceg "config --edit --global"
-git config alias.ceg
-
-# ---
-
-git init
-
-touch file.md
-touch file2.md
-git status
-git add -- file.md file2.md
-git add --all
-git status --cached
-
-git commit
-git commit -m "message"
-git status
-git log
-
-git mv file.md file3.md
-git rm file2.md
-git status
-git checkout file2.md
-git touch new.md
-git add new.md
-git status
-git reset -- new.md
-
-# ---
-
-git clone <url>
-git branch
-git branch -a
-git branch mybranch
-git branch -d mybranch
-git branch myfeature
-git branch
-git checkout myfeature
-git checkout -b <branch> origin/<branch> # create + switch to the new local branch from origin + track a remote branch
-
-git checkout dev_feature
-git merge origin/developpement
-git mergetool
-```
-
 ----
 
 ## Classic git worflow
@@ -865,6 +814,7 @@ https://nvie.com/posts/a-successful-git-branching-model/?
 - http://shafiulazam.com/gitbook/1_the_git_object_model.html
 - https://matthew-brett.github.io/curious-git/index.html
 - http://shafiulazam.com/gitbook/
+- https://github.com/k88hudson/git-flight-rules
 
 TO READ...
 

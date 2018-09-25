@@ -132,6 +132,7 @@ git branch -u <remote>/<branch> # same for current branch
 git branch # list branches
 git branch -r # list all remote branches
 git branch -a -v # list all branches
+git branch -vv # list local branches and reveal the remote branches tracked (if any)
 git branch -d <branch> # soft delete / -D for hard delete
 git push <remote> :<branch> # delete remote branch
 git branch -m <oldname> <newname> # rename branch
@@ -156,7 +157,7 @@ git checkout <branch> # switch to branch (does not work if your working director
 git checkout -b <branch> # creates a branch and moves the HEAD on it, does not modify the working directory or the index
 git checkout -b <branch> <commit-ish> # create then switch to branch from a specific commit (does not work if your working directory is dirty)
 git checkout -b <branch> <remote>/<branch> # create + switch to the new local branch from origin + track a remote branch
-git checkout <remote>/<branch> # if branch does not exist locally but exists on a remote, it is equals to the command above
+git checkout <branch> # if branch does not exist locally but exists on a remote, it is equals to the command above
 git checkout --orphan binaries # creates a new branch without history
 ```
 
@@ -383,6 +384,7 @@ git push <remote> --all # all branches
 git push <remote> --tags # all tags
 git push <remote> :<ref> # delete remote ref/branch (still need to delete the local branch)
 git push <remote> <ref> # links local ref/branch to remote branch = tracking + push
+git push <remote> <local_reference><remote_reference> # push the local reference to a remote reference with a different name
 ```
 
 ### git remote
