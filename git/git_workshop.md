@@ -152,16 +152,41 @@ git branch -u v1/rel
 
 Give each participant a personal number (starting from 10, incrementing by 10) and a team number. The personal number is your ID, a team is composed of 2 developers.
 
-- Create a development branch `v<ID>/dev` from `v1/dev` and push it to the remote
+- Create a development branch `v<ID>/rel` from `v1/dev` and push it to the remote
+- Create a development branch `v<ID>/dev` from `v<ID>/rel` and push it to the remote
 - Create and switch to a new branch `v<ID>/ft/#1` from `v<ID>/dev`
 - Create a new file `code.md`
 - Add a new line in `code.md` (a random but readable sentence)
 - Commit `code.md` with the message `v<ID>/ft/#1 added code.md`
 - Push your branch `v<ID>/ft/#1` to the remote
 - Checkout `v<ID>/dev`
-- Commit a new empty file `new.md`
+- Commit a new empty file `new.md` with the message `added new.md`
 - Push the `v<ID>/dev` branch
 - In gitlab, create a merge request to merge `v<ID>/ft/#1` to `v<ID>/dev`, set the other team member as an approver : it should require a rebase, don't do it automatically with gitlab, we do it manually
+
+<details>
+<summary>Reveal solution</summary>
+<p>
+
+```bash
+git branch v10/rel origin/v1/dev
+git push origin v10/rel
+git branch v10/dev origin/v10/rel
+git push origin v10/dev
+git checkout -b v10/ft/\#1 v10/dev
+echo "my line of code" > code.md
+git add code.md
+git commit -m "added code.md"
+git push origin v10/ft/\#1
+git checkout v10/dev
+touch new.md
+git add new.md
+git commit -m "added new.md"
+git push origin v10/dev
+```
+
+</p>
+</details>
 
 We now need to rebase our feature branch onto dev, to take into account the latest changes in the dev branch.
 
@@ -171,22 +196,68 @@ We now need to rebase our feature branch onto dev, to take into account the late
 - Go back to the merge request, the **merge** button should be available
 - Merge it, fetch on your local repo and check with the log that your commit on ft/#1 is indeed merged in the dev branch
 
-Second part :
+<details>
+<summary>Reveal solution</summary>
+<p>
 
-- Merge your dev branch into your release branch (this should be a fast-forward)
-- Create a new release branch `v<ID+1>/rel`
+```bash
+git checkout v10/ft/\#1
+git rebase origin/v10/dev
+git push origin v10/ft/\#1 #  fails
+git push origin v10/ft/\#1 -f
+git fetch
+git checkout v10/dev
+git rebase origin/v10/dev # or git pull, or git merge origin/v10/dev
+git log
+```
+
+</p>
+</details>
+
+Delivery/release :
+
+- Merge request dev branch into your release branch (this should be a fast-forward)
+- Fetch the changes in your local repo
+- checkout the release branch and make sure it is up to date
+- create a new release tag `v<ID>/rel/mypackage`
+- Push it to the remote
 
 <details>
 <summary>Reveal solution</summary>
 <p>
 
 ```bash
-git branch v2/dev origin/v1/dev
-git checkout -b v2/ft/#1
-echo "my line of code" > code.md
-git add code.md
-git commit -m "added code.md"
+git fetch
+git checkout v10/rel
+git pull
+git tag v10/rel/mypackage
+git push origin v10/rel/mypackage
+```
 
+</p>
+</details>
+
+Update a version with another version : we have a v10 and initiate a new v11, we add a new feature to v10, how to merge this feature in v11.
+
+- Create a new release branch `v<ID+1>/rel` from `v<TEAMMATE_ID>/rel` (this will be our v11) and push it to the remote
+- `v<ID>/rel` is ahead of `v<ID+1>/rel` by 2 commits (your code.md + new.md commits) and behind of `v<ID+1>/rel` by 2 commits (your teammate code.md and new.md commits)
+- Create a merge request to merge `v<ID>/rel` into `v<ID+1>/rel` : it says you have to manually merge the branches, no fast-forward possible
+- Checkout `v<ID+1>/rel`
+- Merge with `v<ID>/rel` (there will be conflicts, keep both sentences)
+- push `v<ID+1>/rel` to the remote
+- The merge request should indicate that the branches have been merged
+
+<details>
+<summary>Reveal solution</summary>
+<p>
+
+```bash
+git checkout -b v11/rel v20/rel
+git push origin v20/rel
+git merge # conflicts
+git mergetool
+git add code.md
+git merge --continue
 ```
 
 </p>
