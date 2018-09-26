@@ -150,10 +150,10 @@ git branch -u v1/rel
 
 ## Cooperating
 
-Give each participant a personal number (starting from 2) and a team number (from 1). The personal number is your ID, a team is composed of 2 developers.
+Give each participant a personal number (starting from 10, incrementing by 10) and a team number. The personal number is your ID, a team is composed of 2 developers.
 
 - Create a development branch `v<ID>/dev` from `v1/dev` and push it to the remote
-- Create and switch to a new branch `v<ID>/ft/#1`
+- Create and switch to a new branch `v<ID>/ft/#1` from `v<ID>/dev`
 - Create a new file `code.md`
 - Add a new line in `code.md` (a random but readable sentence)
 - Commit `code.md` with the message `v<ID>/ft/#1 added code.md`
@@ -162,16 +162,19 @@ Give each participant a personal number (starting from 2) and a team number (fro
 - Commit a new empty file `new.md`
 - Push the `v<ID>/dev` branch
 - In gitlab, create a merge request to merge `v<ID>/ft/#1` to `v<ID>/dev`, set the other team member as an approver : it should require a rebase, don't do it automatically with gitlab, we do it manually
-- Switch to the branch `v<TEAMMATE_ID>/ft/#1`
-- Rebase your current branch onto `v<TEAMMATE_ID>/dev`
-- Push your branch (force push)
+
+We now need to rebase our feature branch onto dev, to take into account the latest changes in the dev branch.
+
+- Switch to the feature branch `v<ID>/ft/#1`
+- Rebase your current branch onto `v<ID>/dev`
+- Push your feature branch (this will be a force push)
 - Go back to the merge request, the **merge** button should be available
 - Merge it, fetch on your local repo and check with the log that your commit on ft/#1 is indeed merged in the dev branch
 
 Second part :
 
-- Fetch
-- Merge
+- Merge your dev branch into your release branch (this should be a fast-forward)
+- Create a new release branch `v<ID+1>/rel`
 
 <details>
 <summary>Reveal solution</summary>
