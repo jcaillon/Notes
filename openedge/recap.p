@@ -14,7 +14,7 @@ DEFINE VARIABLE li_int AS INTEGER NO-UNDO.
 ASSIGN li_int = 10.
 /* si on enchaine plusieurs assignation, il faut impérativement les grouper dans le même ASSIGN statement pour des raisons de performances, ex: */
 ASSIGN
-    li_int = 1.
+    li_int = 1
     li_int = 2
     .
 
@@ -108,12 +108,14 @@ FUNCTION fi_function RETURNS CHARACTER
 /* function */
 FUNCTION fi_function RETURNS CHARACTER
   ( INPUT ipc_name AS CHARACTER ) :
+  
     RETURN "".
 END FUNCTION.
 
 /* Appel d'une fonction */
 MESSAGE fi_function(INPUT "mon input").
 MESSAGE DYNAMIC-FUNCTION('fi_function', INPUT "mon input").
+MESSAGE DYNAMIC-FUNCTION('fi_function' IN lh_proc, INPUT "mon input").
 
 /* RUN procedure interne */
 RUN nomproc.
@@ -345,6 +347,39 @@ ELSE
 
 
 /* ------------------------------- */
+/* GESTION DES TRANSACTIONS */
+/* ------------------------------- */
+
+/* Démarrer explicitement une transaction */
+monbloc:
+DO ON ERROR UNDO monbloc:
+    DO TRANSACTION:
+
+    END.
+END.
+
+/* 
+Sinon, une transaction est démarrée implicitiement dès lors qu'un statement update la base (création, assign, delete).
+La portée de la transaction est alors le block dans lequel on a le statement d'update.
+Les blocs qui déclenchent une transaction sont (si on update la base dans le block) :
+    - FOR EACH
+    - REPEAT
+    - PROCEDURE BLOCK
+    - DO ON ERROR... BLOCKS
+*/
+
+
+/*
+?	Validation
+?	Mot clé TRANSACTION (logical)
+?	Transaction dans une transaction
+?	Portée d’une transaction
+?	Verrous
+?	Réduire la portée d’une transaction
+*/
+
+
+/* ------------------------------- */
 /* MANIPULATIONS DE TABLES ET BUFFERS */
 /* ------------------------------- */
 
@@ -399,8 +434,7 @@ FOR EACH tt_table NO-LOCK:
     MESSAGE tt_table.field1.
 END.
 
-/* avec exclusive-lock? pas besoin de NO-WAIT NO-ERROR, on ne passera pas dans le for each si l'enreg
-n'existe pas ou n'est pas disponible */
+/* avec exclusive-lock? pas besoin de NO-WAIT NO-ERROR, on ne passera pas dans le for each si l'enreg n'existe pas ou n'est pas disponible */
 FOR EACH tt_table EXCLUSIVE-LOCK:
     MESSAGE tt_table.field1.
 END.
@@ -420,11 +454,18 @@ FOR EACH EMPLOYE NO-LOCK,
     FIRST SALAIRE OF EMPLOYE NO-LOCK:
     MESSAGE STRING(EMPLOYE.ID_EMPLOYE) + " > " + STRING(SALAIRE.ID_SALAIRE).
 END.
+
+FOR EACH EMPLOYE NO-LOCK,
+    FIRST SALAIRE WHERE SALAIRE.ID_SALAIRE = EMPLOYE.ID_SALAIRE NO-LOCK:
+    MESSAGE STRING(EMPLOYE.ID_EMPLOYE) + " > " + STRING(SALAIRE.ID_SALAIRE).
+END.
+
 /* le for each précédent est égal à ... */
 FOR EACH EMPLOYE NO-LOCK:
     FIND FIRST SALAIRE OF EMPLOYE NO-ERROR.
     /* Le keyword "OF" revient à faire une clause WHERE mais de façon implicite (pas bien!) */
-    /*FIND FIRST SALAIRE WHERE EMPLOYE.IDSALAIRE = SALAIRE.IDSALAIRE NO-ERROR. */
+    /*FIND FIRST SALAIRE WHERE EMPLOYE.ID_SALAIRE = SALAIRE.ID_SALAIRE NO-ERROR. */
+    /* il faut des noms de champ identiques et au moins un index unique pour ça */
     IF AVAILABLE(SALAIRE) THEN DO:
         MESSAGE STRING(EMPLOYE.ID_EMPLOYE) + " > " + STRING(SALAIRE.ID_SALAIRE).
     END.
@@ -447,13 +488,54 @@ ASSIGN tt_table.field1 = "".
 VALIDATE tt_table.
 RELEASE tt_table.
 
-/*
-le VALIDATE n'est pas utile quand on a uniquement un index PRIMARY UNIQUE et/ou des index "normaux",
-si la condition d'unicité n'est pas respectée alors on sort en erreur au ASSIGN
-
-par contre, si on a des index UNIQUE, l'erreur n'est pas levée au ASSIGN ni au RELEASE...
-c'est là qu'on a besoin du VALIDATE
+/* Utilité du VALIDATE : */
+/* 
+- CAS 1 : valider les champs de base en mandatory (les champs des tt ne peuvent pas être définis mandatory)
+    une table "table1" avec un champ "field1" CHAR en MANDATORY et initial value ?
+    si on essaie pas de ASSIGN ce field1 avec une valeur, on aura une erreur non catchée qui va apparaitre
+    au moment où le commit en base se fait (fin transac).
+    Cette erreur aurait pu être catch avec un VALIDATE table1 NO-ERROR. 
 */
+/* 
+- CAS 2 : 
+    Cas extrêmement bizarre, le VALIDATE va servir à vérifier la condition d'unicité imposée via
+    un index UNIQUE sur un champ de INTEGER pour la valeur 0...
+    une table ou temptable "table1" avec un champ "field1" de type INTEGER et un INDEX IS UNIQUE sur field1
+    Si on créé un enreg avec field1 = 10 puis un second enreg avec même valeur, on sort en erreur lors du 
+    second ASSIGN.
+    MAIS... Si on créé un enreg avec field1 = 0 puis un second enreg de la même valeur, le ASSIGN n'est plus en erreur, ni le release. Et on sort en erreur non catché à la fin de la transaction. On aurait pu
+    éviter ce pb avec un VALIDATE.
+*/
+/* à noter également, le VALIDATE déclenche les triggers WRITE et/ou CREATE de la table */
+DEFINE TEMP-TABLE tt_omg NO-UNDO
+    FIELD id_poste  AS INTEGER
+    INDEX constraint IS UNIQUE id_poste.
+    
+DEFINE VARIABLE li_wtf AS INTEGER NO-UNDO.
+
+DO li_wtf = 0 TO 1:
+    CREATE tt_omg.
+    ASSIGN tt_omg.id_poste = li_wtf.
+    RELEASE tt_omg.
+
+    CREATE tt_omg.
+    ASSIGN tt_omg.id_poste = li_wtf NO-ERROR.
+    IF ERROR-STATUS:ERROR THEN DO:
+        /* will fail on the assign when breaking the unique condition with any value different than 0 */
+        MESSAGE "Failed ON ASSIGN for li_wtf = " + STRING(li_wtf) + " !" SKIP ERROR-STATUS:GET-MESSAGE(1) VIEW-AS ALERT-BOX ERROR.
+        DELETE tt_omg.
+    END.
+    ELSE DO:
+        VALIDATE tt_omg NO-ERROR.
+        IF ERROR-STATUS:ERROR THEN DO:
+            /* will catch the case where we break a unique index with the default value of 0!!! (if the index is primary, we would break on assign!!) */
+            MESSAGE "Failed ON VALIDATE for li_wtf = " + STRING(li_wtf) + " !" SKIP ERROR-STATUS:GET-MESSAGE(1) VIEW-AS ALERT-BOX ERROR.
+            DELETE tt_omg.
+        END.
+        RELEASE tt_omg.
+    END.
+END.
+
 
 /* vider la temp table */
 EMPTY TEMP-TABLE tt_table.
@@ -463,7 +545,12 @@ FOR EACH lb_table EXCLUSIVE-LOCK:
     DELETE lb_table.
 END.
 
-/* Attention! Tant que le RELEASE n'a pas eu lieu, les infos ne sont pas disponibles dans la TABLE / TEMP-TABLE, par exemple : */
+
+/* 
+Un enregistrement n'est dispo en base qu'au moment où la transaction se termine. 
+Cependant, il est visible juste après avoir des assign des champs faisant parti d'un index!!! (wtf!) Attention, il est visible (lisible) mais évidemment toujours pris en exclusive-lock 
+jusqu'à ce que la transaction soit validée (ou bien undo et dans ce cas le record est dégagé)
+ */
 CREATE tt_table.
 ASSIGN tt_table.field1 = "1".
 FOR EACH lb_table:
@@ -473,6 +560,26 @@ END.
 /* pourtant on peut bien récupérer l'information avec le buffer (buffer par défaut de tt_table) */
 MESSAGE "test 2 : " + tt_table.field1.
 RELEASE tt_table.
+
+EMPTY TEMP-TABLE tt_table.
+
+CREATE tt_table.
+ASSIGN tt_table.field2 = 1.
+FOR EACH lb_table:
+    MESSAGE "test 3 : " + STRING(lb_table.field2). /* va s'afficher car field2 fait parti d'un index! wtf la logique? */
+END.
+
+EMPTY TEMP-TABLE tt_table.
+
+/* moralité : bien maitriser ses transactions pour être sûr que son enreg soit commit quand on veut qu'il le soit... */
+DO TRANSACTION :
+    CREATE tt_table.
+    ASSIGN tt_table.field1 = "1".
+END. // enreg commit ici! 
+FOR EACH lb_table:
+    MESSAGE "test 4 : " + lb_table.field1. /* s'affiche car on a bien fini la trans et on l'a commit */
+END.
+
 
 
 /* passer une table en paramètre (= on passe tous les enregistrements en paramètres!) */
@@ -508,18 +615,17 @@ END PROCEDURE.
 
 /* modifier un enregistrement en base */
 /* on se positionne dessus */
-DEFINE BUFFER lb_base FOR EMPLOYE.
-FIND lb_base WHERE lb_base.ID_EMPLOYE = 1 EXCLUSIVE-LOCK NO-WAIT NO-ERROR.
-IF AVAILABLE(lb_base) THEN DO:
+DEFINE BUFFER lb_employe FOR EMPLOYE.
+FIND lb_employe WHERE lb_employe.ID_EMPLOYE = 1 EXCLUSIVE-LOCK NO-WAIT NO-ERROR.
+IF AVAILABLE(lb_employe) THEN DO:
     /* on modifie */
-    ASSIGN lb_base.PRENOM = "paco" NO-ERROR.
+    ASSIGN lb_employe.PRENOM = "paco" NO-ERROR.
     IF ERROR-STATUS:ERROR THEN
-        RETURN ERROR "ass " + ERROR-STATUS:GET-MESSAGE(1).
-    VALIDATE lb_base NO-ERROR.
+        RETURN ERROR "assign " + ERROR-STATUS:GET-MESSAGE(1).
+    VALIDATE lb_employe NO-ERROR.
     IF ERROR-STATUS:ERROR THEN
         RETURN ERROR "val " + ERROR-STATUS:GET-MESSAGE(1).
-    /* on pousse la modifcation en base */
-    RELEASE lb_base NO-ERROR.
+    RELEASE lb_employe NO-ERROR.
     IF ERROR-STATUS:ERROR THEN
         RETURN ERROR "release " + ERROR-STATUS:GET-MESSAGE(1).
 END.
@@ -530,7 +636,6 @@ DEFINE TEMP-TABLE tt_nopk NO-UNDO
     FIELD field2 AS INTEGER
     .
 DEFINE BUFFER lb_nopk FOR tt_nopk.
-
 
 /* copie d'enregistrements */
 EMPTY TEMP-TABLE tt_nopk.
@@ -554,6 +659,9 @@ BUFFER-COPY tt_nopk TO lb_nopk.
 /* on peut copier tout les champs SAUF field2 et assigner à la place la valeur 5 pour field2 */
 BUFFER-COPY tt_nopk EXCEPT tt_nopk.field2 TO lb_nopk
     ASSIGN lb_nopk.field2 = 5.
+    
+/* copie de tous les enregistrements d'une table vers une autre */
+TEMP-TABLE tt_target:COPY-TEMP-TABLE(TEMP-TABLE tt_source:HANDLE).
 
 /* comparaison de buffer */
 DEFINE VARIABLE ll_equals AS LOGICAL NO-UNDO.
@@ -602,36 +710,6 @@ ASSIGN
     li_int = CURRENT-VALUE(seq_exercice5_employe) /* = 1 récupérer la valeur actuelle */
     li_int = NEXT-VALUE(seq_exercice5_employe) /* = 2 récupérer la prochaine valeur de la séquence (incrémente puis renvoi la nouvelle valeur) */
     .
-
-
-/* ------------------------------- */
-/* GESTION DES TRANSACTIONS */
-/* ------------------------------- */
-
-/* Démarrer explicitement une transaction */
-monbloc:
-DO ON ERROR UNDO monbloc:
-    DO TRANSACTION:
-
-    END.
-END.
-
-/* Les blocs qui déclenchent une transaction (si on update la base dans le block) :
-    - FOR EACH
-    - REPEAT
-    - PROCEDURE BLOCK
-    - DO ON ERROR... BLOCKS
-*/
-
-
-/*
-?	Validation
-?	Mot clé TRANSACTION (logical)
-?	Transaction dans une transaction
-?	Portée d’une transaction
-?	Verrous
-?	Réduire la portée d’une transaction
-*/
 
 
 
