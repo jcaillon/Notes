@@ -268,6 +268,8 @@ MESSAGE REPLACE("hello one ola", "one", "two").
 
 MESSAGE ENCODE("password").
 
+MESSAGE STRING(CAN-DO("0,2,10", STRING(9))).
+
 
 /* ------------------------------- */
 /* FONCTIONS DATE */
@@ -692,6 +694,7 @@ DISABLE TRIGGERS FOR DUMP OF EMPLOYE.
 /* ------------------------------- */
 
 DEFINE DATASET ds_myds
+    SERIALIZE-HIDDEN
     FOR tt_table, tt_like.
 
 /* vider un dataset */
