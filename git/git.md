@@ -422,6 +422,7 @@ A parent will point to a specific commit of a submodule. Submodules can be updat
 
 ```bash
 git submodule add git@example.com:project.git
+git submodule add ../Oetools.Utilities.git
 git submodule update --init --recursive # this will add the submodules to the .git/config + clone + checkout them
 ```
 
