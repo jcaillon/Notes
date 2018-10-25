@@ -22,8 +22,8 @@ Function ParseFailuresInTrxResultFile ( [string] $xmlInputFile )
 
 [CmdletBinding(PositionalBinding = $false)]
 param(
-    [ValidateSet('Debug', 'Release')]
-    $Configuration = $null,
+    [Parameter()][ValidateSet('debug', 'release')]
+    [string]$Configuration = $env:configuration,
     [switch]
     $ci,
     [switch]

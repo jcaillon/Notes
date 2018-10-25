@@ -1,16 +1,3 @@
-# Neither return nor exit do in PowerShell what you think they do.
-# This function is from http://weblogs.asp.net/soever/returning-an-exit-code-from-a-powershell-script
-Function ExitWithCode () {
-    param($exitcode)
-    if ($exitcode > 0) {
-        Write-Host -f red "Exiting with code $exitcode"
-    } else {
-        Write-Host -f green "Done, exiting with code $exitcode"
-    }    
-    $host.SetShouldExit($exitcode)
-    exit $exitcode
-}
-
 Function ParseFailuresInTrxResultFile ([string] $xmlInputFile) {
     $xml = [Xml](Get-Content $xmlInputFile)
 
@@ -54,3 +41,12 @@ is nonzero.
         Throw "$exe indicated failure (exit code $LASTEXITCODE; full command: $Args)." 
     }
 }
+
+Function Write-Log ($msg, $ForegroundColor = "White", $BackgroundColor = "Black") { 
+    if($host.UI.RawUI.ForegroundColor -ne $null) {
+        Write-Host "[$([datetime]::Now.ToLongTimeString())] $msg" -ForegroundColor $ForegroundColor -BackgroundColor $BackgroundColor
+    } else {
+        Write-Output "[$([datetime]::Now.ToLongTimeString())] $msg`r`n" 
+    }
+}
+

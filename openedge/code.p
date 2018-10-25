@@ -2,6 +2,8 @@
 {bs00ds_confserveur.i &1="NEW GLOBAL SHARED "}
 {bc00ds_confclient.i}
 
+// bs00batchace.sh domaine3 p stable3 sac 464 UNIX MULTI "" ACE 0 0 test.p "PARAM1 'valeur1' PARAM2 'valeur2'"
+
 MESSAGE STRING(DYNAMIC-FUNCTION('btDeletePersistentProceduresStartingWith', INPUT "bs00xmldiasp1")).
 RUN bs00xmldiasp1.p PERSISTENT SET gh_prog NO-ERROR.
 SESSION:ADD-SUPER-PROCEDURE(gh_prog) NO-ERROR.
