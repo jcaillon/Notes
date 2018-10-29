@@ -1,6 +1,15 @@
 # PROLIB
 
-The byte order to use to read numbers from a pro-library is **Big endian**.
+> This page sums up my knowledge of openedge pro-libraries (.pl files).
+
+This page exists so that you can make your own implementation of a pro-library archiver. If you are a C# user, you can take a look at my implementation [in Oetools.Utilities](https://github.com/jcaillon/Oetools.Utilities).
+
+You will also find handy samples of pro libraries that helped me gather those info [here](prolib.zip).
+
+Miscellaneous info on prolib :
+
+- The byte order to use to read numbers from a pro-library is **Big endian**.
+- The file data inside a prolib is uncompressed.
 
 ## The structure of a prolib
 
@@ -28,7 +37,7 @@ Read the directory listing (i.e. list of file entries):
         1. You reach the end of the stream (in that case, stop reading)
         2. You read an 255[0xFF] byte (in which case, you continue to step 3)
 3. Read the file path length (1 byte):
-    1. If the length is 0, skip this file entry
+    1. If the length is 0, read the file entry as stated below but note that this is not a "real" file
     2. If >0, read the file entry:
         1. Read the file path (the length is fixed and known, the encoding to use was in the header)
         2. Read the file CRC (2 bytes)
@@ -37,8 +46,9 @@ Read the directory listing (i.e. list of file entries):
         5. Read the file size (4 bytes)
         6. Read the packing date (4 bytes)
         7. Read the file date (4 bytes)
-        8. Skip 24 null bytes (idk why)
-        9. Back to step 2
+        8. Skip 24 null bytes (I don't understand the purpose of those bytes, they seem unused)
+        9. *At this point, you can check the constancy of the crc value*
+        10. Back to step 2
 
 The last file has a file path of length 0, a size of 39[0x27] and a type of 100[0x64]. Its CRC value is 51258[0xC8 3A].
 
