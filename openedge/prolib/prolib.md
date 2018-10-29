@@ -42,7 +42,39 @@ Read the directory listing (i.e. list of file entries):
 
 The last file has a file path of length 0, a size of 39[0x27] and a type of 100[0x64]. Its CRC value is 51258[0xC8 3A].
 
-## The different prolib format
+## Crc computation
+
+### Header Crc
+
+![](images/2018-10-29-15-54-12.png)
+
+### File entry Crc
+
+![](images/2018-10-29-15-55-01.png)
+
+### How to compute the Crc
+
+You can find a c# implementation below. Note that the crc table should only be computed once, we recompute it here just to simplify the code snippet.
+
+```csharp
+public static ushort ComputeCrc(int value, byte[] data) {
+    var crcTable = new ushort[256];
+    for (int j = 0; j < crcTable.Length; j++) {
+        for (short k = 1, l = 0xC0; k < byte.MaxValue ; k <<= 1, l <<= 1) {
+            if ((j & k) != 0) {
+                crcTable[j] ^= (ushort) (0xC001 ^ l);
+            }
+        }
+    }
+    foreach (var b in data) {
+        var crcTableIdx = (value ^ b) & byte.MaxValue;
+        value = value / 256 ^ crcTable[crcTableIdx];
+    }
+    return (ushort) value;
+}
+```
+
+## The different prolib versions
 
 ### Differences between v11 and v7
 
@@ -84,9 +116,7 @@ The header of the library is then updated (first 42 bytes):
 
 ## Difference between a standard and shared library
 
-Only 1 byte is changed.
-
-The format of file, which is a Uint16 stored in the first 2 bytes, goes from `55051` to `55052` (at least for v11 libraries).
+Only 1 byte is changed, which is the library version.
 
 ![](images/2018-10-25-12-14-16.png)
 
