@@ -213,6 +213,14 @@ IF ERROR-STATUS:ERROR THEN
     RETURN FALSE.
 &ENDIF
 
+/* reload persistent */
+DEFINE VARIABLE gh_prog AS HANDLE NO-UNDO.
+
+DYNAMIC-FUNCTION('btDeletePersistentProceduresStartingWith', INPUT "bx00envoimail.p").
+RUN bx00envoimail.p PERSISTENT SET gh_prog NO-ERROR.
+SESSION:ADD-SUPER-PROCEDURE(gh_prog) NO-ERROR.
+RUN btInitTracesServeur.
+
 /* convert char to decimal */
 REPLACE(REPLACE(lc_, ".", SESSION:NUMERIC-DECIMAL-POINT), ",", SESSION:NUMERIC-DECIMAL-POINT)
 session:numeric-decimal-point

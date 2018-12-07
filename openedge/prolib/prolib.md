@@ -31,9 +31,9 @@ Read the header:
 Read the directory listing (i.e. list of file entries):
 
 1. Go to the *directory listing offset*
-2. Read the first byte which will be either FF (255) or FE (254):
+2. Read the first byte which will be either FF (255) or FE (254) or 0:
     1. 255[0xFF]: you should read the following file entry
-    2. 254[0xFE]: you should skip all the following bytes until...
+    2. 254[0xFE] or 0: you should skip all the following bytes until...
         1. You reach the end of the stream (in that case, stop reading)
         2. You read an 255[0xFF] byte (in which case, you continue to step 3)
 3. Read the file path length (1 byte):
@@ -53,6 +53,8 @@ Read the directory listing (i.e. list of file entries):
 The last file has a file path of length 0, a size of 39[0x27] and a type of 100[0x64]. Its CRC value is 51258[0xC8 3A].
 
 ## Crc computation
+
+The prolib format uses CRC-16/ARC.
 
 ### Header Crc
 
@@ -83,6 +85,19 @@ public static ushort ComputeCrc(int value, byte[] data) {
     return (ushort) value;
 }
 ```
+
+## How to write a prolib
+
+You can reverse the instructions of the reading part:
+
+- Write the header
+- Write the data
+- Write the file entries
+
+**One very important thing to note about file entries:** file entries are actually written in 'blocks' of 512 bytes. When writing file entries, keep track of current block size written (the sum of file entry length):
+
+- if the next file entry to read will make the current block exceeds or equal 512 bytes, write FE (254) and then null bytes to fill the current block (512), then reset the block size counter
+- otherwise, write the file entry as usual, starting with FF (255)
 
 ## The different prolib versions
 

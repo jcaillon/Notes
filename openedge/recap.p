@@ -108,7 +108,7 @@ FUNCTION fi_function RETURNS CHARACTER
 /* function */
 FUNCTION fi_function RETURNS CHARACTER
   ( INPUT ipc_name AS CHARACTER ) :
-  
+
     RETURN "".
 END FUNCTION.
 
@@ -203,7 +203,7 @@ END.
 RUN my_error_proc NO-ERROR.
 IF ERROR-STATUS:ERROR THEN
     MESSAGE "Il y a eu une erreur, description : " + (IF RETURN-VALUE > "" THEN RETURN-VALUE ELSE "inconnue").
-    
+
 PROCEDURE my_error_proc PRIVATE:
     IF TRUE THEN
         /* il y a eu une erreur fonctionnelle, il faut quitter cette procédure en erreur */
@@ -360,7 +360,8 @@ DO ON ERROR UNDO monbloc:
     END.
 END.
 
-/* 
+/*
+Une transaction est initialisée explicitement avec le keyword TRANSACTION dans un block DO ou REPEAT ou FOR.
 Sinon, une transaction est démarrée implicitiement dès lors qu'un statement update la base (création, assign, delete).
 La portée de la transaction est alors le block dans lequel on a le statement d'update.
 Les blocs qui déclenchent une transaction sont (si on update la base dans le block) :
@@ -368,6 +369,11 @@ Les blocs qui déclenchent une transaction sont (si on update la base dans le blo
     - REPEAT
     - PROCEDURE BLOCK
     - DO ON ERROR... BLOCKS
+
+Lire: https://knowledgebase.progress.com/articles/Article/0000208052
+
+On peut voir les transactions implicites créées via le fichier de listing (COMPILE LISTING).
+On peut voir toutes les transactions en runtime via l'option de log 4GLTrans.
 */
 
 
@@ -392,7 +398,7 @@ DEFINE TEMP-TABLE tt_table NO-UNDO
     INDEX idx IS UNIQUE PRIMARY field2 .
 
 /* Créer une tt comme une autre table (possible de définir comme une table en base) */
-/* voir les notes de define temp-table pour plus de précisions mais si on ne précise pas 
+/* voir les notes de define temp-table pour plus de précisions mais si on ne précise pas
 les INDEX pour cette tt LIKE table, alors on hérite des index de la table */
 DEFINE TEMP-TABLE tt_like NO-UNDO
     LIKE EMPLOYE.
@@ -491,19 +497,19 @@ VALIDATE tt_table.
 RELEASE tt_table.
 
 /* Utilité du VALIDATE : */
-/* 
+/*
 - CAS 1 : valider les champs de base en mandatory (les champs des tt ne peuvent pas être définis mandatory)
     une table "table1" avec un champ "field1" CHAR en MANDATORY et initial value ?
     si on essaie pas de ASSIGN ce field1 avec une valeur, on aura une erreur non catchée qui va apparaitre
     au moment où le commit en base se fait (fin transac).
-    Cette erreur aurait pu être catch avec un VALIDATE table1 NO-ERROR. 
+    Cette erreur aurait pu être catch avec un VALIDATE table1 NO-ERROR.
 */
-/* 
-- CAS 2 : 
+/*
+- CAS 2 :
     Cas extrêmement bizarre, le VALIDATE va servir à vérifier la condition d'unicité imposée via
     un index UNIQUE sur un champ de INTEGER pour la valeur 0...
     une table ou temptable "table1" avec un champ "field1" de type INTEGER et un INDEX IS UNIQUE sur field1
-    Si on créé un enreg avec field1 = 10 puis un second enreg avec même valeur, on sort en erreur lors du 
+    Si on créé un enreg avec field1 = 10 puis un second enreg avec même valeur, on sort en erreur lors du
     second ASSIGN.
     MAIS... Si on créé un enreg avec field1 = 0 puis un second enreg de la même valeur, le ASSIGN n'est plus en erreur, ni le release. Et on sort en erreur non catché à la fin de la transaction. On aurait pu
     éviter ce pb avec un VALIDATE.
@@ -512,7 +518,7 @@ RELEASE tt_table.
 DEFINE TEMP-TABLE tt_omg NO-UNDO
     FIELD id_poste  AS INTEGER
     INDEX constraint IS UNIQUE id_poste.
-    
+
 DEFINE VARIABLE li_wtf AS INTEGER NO-UNDO.
 
 DO li_wtf = 0 TO 1:
@@ -548,9 +554,9 @@ FOR EACH lb_table EXCLUSIVE-LOCK:
 END.
 
 
-/* 
-Un enregistrement n'est dispo en base qu'au moment où la transaction se termine. 
-Cependant, il est visible juste après avoir des assign des champs faisant parti d'un index!!! (wtf!) Attention, il est visible (lisible) mais évidemment toujours pris en exclusive-lock 
+/*
+Un enregistrement n'est dispo en base qu'au moment où la transaction se termine.
+Cependant, il est visible juste après avoir des assign des champs faisant parti d'un index!!! (wtf!) Attention, il est visible (lisible) mais évidemment toujours pris en exclusive-lock
 jusqu'à ce que la transaction soit validée (ou bien undo et dans ce cas le record est dégagé)
  */
 CREATE tt_table.
@@ -577,7 +583,7 @@ EMPTY TEMP-TABLE tt_table.
 DO TRANSACTION :
     CREATE tt_table.
     ASSIGN tt_table.field1 = "1".
-END. // enreg commit ici! 
+END. // enreg commit ici!
 FOR EACH lb_table:
     MESSAGE "test 4 : " + lb_table.field1. /* s'affiche car on a bien fini la trans et on l'a commit */
 END.
@@ -593,7 +599,7 @@ FIND FIRST tt_table.
 RUN pi_table.p (OUTPUT TABLE tt_table).
 
 FOR EACH tt_table:
-    MESSAGE STRING(tt_table.field2). 
+    MESSAGE STRING(tt_table.field2).
 END.
 
 PROCEDURE pi_table.p :
@@ -661,7 +667,7 @@ BUFFER-COPY tt_nopk TO lb_nopk.
 /* on peut copier tout les champs SAUF field2 et assigner à la place la valeur 5 pour field2 */
 BUFFER-COPY tt_nopk EXCEPT tt_nopk.field2 TO lb_nopk
     ASSIGN lb_nopk.field2 = 5.
-    
+
 /* copie de tous les enregistrements d'une table vers une autre */
 TEMP-TABLE tt_target:COPY-TEMP-TABLE(TEMP-TABLE tt_source:HANDLE).
 
