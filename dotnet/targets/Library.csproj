@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ============================================================= -->
+  <!-- PROJECT PROPERTIES -->
+  <!-- ============================================================= -->
+
+  <PropertyGroup Label="Custom project variables">
+    <!-- Type or assembly to produce Exe/Library -->
+    <ProjOutputType>Library</ProjOutputType>
+    <!-- The name of the assembly .dll/.exe -->
+    <ProjAssemblyName>GithubUpdater</ProjAssemblyName>
+    <!-- major.minor.patch[.build][-pre-release-tag] -->
+    <ProjVersion>1.0.0-beta</ProjVersion>
+    <ProjFileDescription>Update your software through github releases.</ProjFileDescription>
+    <ProjCompany>Noyacode</ProjCompany>
+    <ProjAuthor>jcaillon</ProjAuthor>
+    <ProjApplicationIcon></ProjApplicationIcon>
+    <!-- https://docs.microsoft.com/en-us/dotnet/standard/frameworks -->
+    <ProjDefaultTargetFrameworks>net461;netstandard2.0</ProjDefaultTargetFrameworks>
+    <!-- ==== Package ==== -->
+    <!-- 64x64 image with transparent background to use as the icon -->
+    <ProjPackageIconPath>docs/images/logo.png</ProjPackageIconPath>
+    <ProjPackageDescription>$(ProjFileDescription)</ProjPackageDescription>
+    <!-- A space?-delimited list of tags that designates the package. -->
+    <ProjPackageTags>$(ProjAssemblyName) update updater github releases release api software install installation</ProjPackageTags>
+    <!-- ==== Extra ==== -->
+    <!-- https://spdx.org/licenses/ (column identifier) -->
+    <ProjLicence>GPL-3.0-or-later</ProjLicence>
+    <ProjProductVersion>$(ProjVersion)</ProjProductVersion>
+    <ProjProductName>$(ProjAssemblyName)</ProjProductName>
+    <ProjRepositoryName>$(ProjAssemblyName)</ProjRepositoryName>
+    <ProjRepositoryOwner>$(ProjAuthor)</ProjRepositoryOwner>
+    <ProjRootNamespace>$(ProjRepositoryName)</ProjRootNamespace>
+    <ProjCopyright>Copyright (c) $([System.DateTime]::Now.ToString(yyyy)) - $(ProjAuthor)</ProjCopyright>
+  </PropertyGroup>
+
+  <!-- Common properties -->
+  <Import Project="Properties.common.target" />
+
+  <!-- ============================================================= -->
+  <!-- PROJECT SPECIFIC -->
+  <!-- ============================================================= -->
+
+  <ItemGroup Label="Resources">
+    <EmbeddedResource Include="Resources\SimpleFileUpdater\SimpleFileUpdater.exe" />
+    <EmbeddedResource Include="Resources\SimpleFileUpdater_admin\SimpleFileUpdater.exe" />
+    <EmbeddedResource Include="Resources\SimpleFileUpdater_core\SimpleFileUpdater.dll" />
+    <EmbeddedResource Include="Resources\SimpleFileUpdater_core\SimpleFileUpdater.deps.json" />
+    <EmbeddedResource Include="Resources\SimpleFileUpdater_core\SimpleFileUpdater.runtimeconfig.json" />
+  </ItemGroup>
+  
+</Project>
