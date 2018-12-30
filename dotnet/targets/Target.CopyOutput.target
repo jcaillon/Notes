@@ -126,7 +126,7 @@
     </ItemGroup> 
     -->
     <ItemGroup>
-      <ZipFilesPublished Include="$(ReleaseBinPath)\*" Condition=" '%(Extension)'!='.xml' " />
+      <ZipFilesPublished Include="$(ReleaseBinPath)\*" Exclude="**\*.xml" />
     </ItemGroup>
 
     <!-- create output directory -->
