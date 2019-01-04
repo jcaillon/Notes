@@ -85,7 +85,7 @@ DYNAMIC-FUNCTION("btGetMessageSep", INPUT "|BOI|IN|065|").
   Notes:
     Le séparateur doit être un seul caractère, de préférence |
 */
-DYNAMIC-FUNCTION("btformatererreursep", INPUT "|").
+DYNAMIC-FUNCTION('btFormaterErreurSep', INPUT "|").
 
 /* récupérer le dernier message d'erreur en clair */
 DYNAMIC-FUNCTION('btGetMessageSep', INPUT DYNAMIC-FUNCTION('btformatererreursep', INPUT "|")).

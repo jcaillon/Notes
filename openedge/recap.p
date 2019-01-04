@@ -199,15 +199,21 @@ IF ERROR-STATUS:ERROR THEN DO:
     END.
 END.
 
-/* si dans une procédure on fait un RETURN ERROR, alors il faudra faire NO-ERROR et géré l'erreur à l'appel de cette procédure, exemple : */
+/* si dans une procédure on fait un RETURN ERROR, alors il faudra faire NO-ERROR et gérer l'erreur à l'appel de cette procédure, exemple : */
 RUN my_error_proc NO-ERROR.
 IF ERROR-STATUS:ERROR THEN
-    MESSAGE "Il y a eu une erreur, description : " + (IF RETURN-VALUE > "" THEN RETURN-VALUE ELSE "inconnue").
+    MESSAGE "Il y a eu une erreur, description : " + (IF RETURN-VALUE > "" THEN RETURN-VALUE ELSE (IF ERROR-STATUS:NUM-MESSAGES > 0 THEN ERROR-STATUS:GET-MESSAGE(1) ELSE "erreur inconnue")).
 
 PROCEDURE my_error_proc PRIVATE:
-    IF TRUE THEN
-        /* il y a eu une erreur fonctionnelle, il faut quitter cette procédure en erreur */
-        RETURN ERROR "oups, il y a un problème avec le montant total".
+    IF RANDOM(1, 2) = 1 THEN
+        RETURN ERROR "mon message applicatif décrivant l'erreur".
+    ELSE DO:
+        DEFINE VARIABLE lc_ AS CHARACTER NO-UNDO.
+        /* runtime error : REPLACE/CONCAT ne peut aboutir à des données > 32000 octets. (11678) */
+        ASSIGN lc_ = FILL("a", 31000) + FILL("a", 31000) NO-ERROR.
+        IF ERROR-STATUS:ERROR THEN
+            RETURN ERROR ERROR-STATUS:GET-MESSAGE(1).
+    END.    
     RETURN "".
 END PROCEDURE.
 
