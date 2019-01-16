@@ -4,6 +4,16 @@
 
 /* définir une variable */
 DEFINE VARIABLE li_int AS INTEGER NO-UNDO.
+
+/* Liste des types:
+- CHARACTER
+- INTEGER
+- DECIMAL
+- LOGICAL
+- DATE
+- DATETIME
+ */
+
 /* on met no-undo pour dire que la variable ne sera pas "rollback" lors du UNDO d'une transaction, il faut le faire pour ne pas gaspiller inutilement de la mémoire (si on ne met pas NO-UNDO, progress garde une image avant + image courante à chaque fois qu'on ouvre une transaction au lieu de simplement garder la valeur courante) */
 /* Portée d'une définition :
 - si le DEFINE est au niveau 0 du .p ou .w c'est un DEFINE global et il est définit pour tout le fichier
@@ -31,6 +41,17 @@ END.
 
 
 /* ------------------------------- */
+/* OPERATEURS */
+/* ------------------------------- */
+AND OR NOT
+> GT 
+>= GE 
+< LT 
+<= LE 
+= EQ
+
+ 
+/* ------------------------------- */
 /* CONTROLES */
 /* ------------------------------- */
 
@@ -49,7 +70,6 @@ END.
 unblock:
 DO ON ERROR UNDO unblock, LEAVE unblock:
     /* do something */
-
     ERROR-STATUS:ERROR = FALSE.
 END.
 IF ERROR-STATUS:ERROR THEN
@@ -68,7 +88,6 @@ END.
 
 /* tant que */
 REPEAT WHILE FALSE:
-
 END.
 
 /* switch */
@@ -103,11 +122,11 @@ END PROCEDURE.
 
 /* prototype de fonction */
 FUNCTION fi_function RETURNS CHARACTER
-  ( INPUT ipc_name AS CHARACTER ) FORWARD.
+  ( INPUT ipc_name AS CHARACTER, INPUT ipi_machin AS INTEGER ) FORWARD.
 
 /* function */
 FUNCTION fi_function RETURNS CHARACTER
-  ( INPUT ipc_name AS CHARACTER ) :
+  ( INPUT ipc_name AS CHARACTER, INPUT ipi_machin AS INTEGER ) :
 
     RETURN "".
 END FUNCTION.
@@ -224,16 +243,21 @@ END PROCEDURE.
 /* FONCTIONS DES CHARACTER */
 /* ------------------------------- */
 
+
 DEFINE VARIABLE lc_string AS CHARACTER NO-UNDO.
 DEFINE VARIABLE ll_logical AS LOGICAL NO-UNDO.
 
 MESSAGE STRING(1).
 MESSAGE QUOTER("to quote").
+MESSAGE QUOTER("C'est bien de pouvoir utiliser les ' guillemets simples.").
+MESSAGE QUOTER('Mais les "doubles" sont bien aussi.').
 
 ASSIGN lc_string = "hello".
 ASSIGN ll_logical = lc_string BEGINS "H".
-ASSIGN ll_logical = lc_string MATCHES "..ll*". // . et *
+ASSIGN ll_logical = ll_logical AND lc_string MATCHES "..ll*". // . et *
 MESSAGE STRING(ll_logical).
+ASSIGN ll_logical = YES.
+ASSIGN ll_logical = TRUE.
 
 MESSAGE CHR(65).
 
@@ -251,6 +275,7 @@ MESSAGE STRING(LENGTH("12345")).
 
 MESSAGE STRING(NUM-ENTRIES("one,two,three", ",")).
 MESSAGE STRING(NUM-ENTRIES("one/two/three", "/")).
+MESSAGE STRING(NUM-ENTRIES("one,two,three")).
 
 MESSAGE ENTRY(2, "one/two/three", "/").
 
@@ -268,7 +293,7 @@ ASSIGN lc_ = "12345".
 SUBSTRING(lc_, 3, 2) = "aaaaa".
 MESSAGE lc_.
 
-MESSAGE SUBSTITUTE("there are &1 substitute in this &2", 2, "sentence").
+MESSAGE SUBSTITUTE("there are &1 substitute in this &2, &3 &4", 2, "sentence", QUOTER("zsdzed"), true).
 
 MESSAGE REPLACE("hello one ola", "one", "two").
 
@@ -289,6 +314,11 @@ MESSAGE STRING(YEAR(TODAY)).
 MESSAGE STRING(MONTH(TODAY)).
 MESSAGE STRING(DAY(TODAY)).
 MESSAGE STRING(WEEKDAY(TODAY)).
+MESSAGE STRING(ADD-INTERVAL(TODAY, -18, "years")).
+MESSAGE STRING(INTERVAL(TODAY, ADD-INTERVAL(TODAY, -18, "years"), "years")).
+MESSAGE STRING(MTIME).
+MESSAGE STRING(NOW).
+MESSAGE STRING(DATETIME(TODAY - 10, MTIME - (1000 * 60 * 3) )).
 
 ETIME(TRUE).
 PAUSE 1.
@@ -324,6 +354,11 @@ IF ? THEN
     MESSAGE "? <> true".
 ELSE
     MESSAGE "? = false".
+    
+MESSAGE STRING("A" > "B").
+MESSAGE STRING("a" > "B").
+MESSAGE STRING("ab" > "ac").
+MESSAGE STRING("a" >= "a").
 
 /* tester si une variable n'est ni nulle ni vide */
 DEFINE VARIABLE lc_null AS CHARACTER NO-UNDO INITIAL ?.
@@ -504,13 +539,12 @@ RELEASE tt_table.
 
 /* Utilité du VALIDATE : */
 /*
+- CAS 1 : exécute les triggers de validation de la base de données.
 - CAS 1 : valider les champs de base en mandatory (les champs des tt ne peuvent pas être définis mandatory)
     une table "table1" avec un champ "field1" CHAR en MANDATORY et initial value ?
     si on essaie pas de ASSIGN ce field1 avec une valeur, on aura une erreur non catchée qui va apparaitre
     au moment où le commit en base se fait (fin transac).
     Cette erreur aurait pu être catch avec un VALIDATE table1 NO-ERROR.
-*/
-/*
 - CAS 2 :
     Cas extrêmement bizarre, le VALIDATE va servir à vérifier la condition d'unicité imposée via
     un index UNIQUE sur un champ de INTEGER pour la valeur 0...
@@ -665,6 +699,7 @@ FIND FIRST tt_nopk.
 CREATE lb_nopk.
 BUFFER-COPY tt_nopk TO lb_nopk.
 RELEASE lb_nopk.
+RELEASE tt_nopk.
 
 /* si la cible de la copie n'est pas positionnée, le CREATE se fait automatiquement */
 BUFFER-COPY tt_nopk TO lb_nopk.

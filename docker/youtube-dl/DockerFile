@@ -1,0 +1,12 @@
+FROM python:alpine
+
+RUN pip install --upgrade youtube-dl \
+ && mkdir -p /download
+
+RUN apk upgrade -U \
+ && apk add ca-certificates ffmpeg libva-intel-driver \
+ && rm -rf /var/cache/*
+	
+WORKDIR /download
+
+ENTRYPOINT ["youtube-dl"]
