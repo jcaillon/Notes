@@ -821,3 +821,29 @@ COMBO-BOX-1:INSERT("itemx", "valuex", 3).
 /* forcer un évnement de widget */
 APPLY "choose" TO bt_button.
 
+
+/* ------------------------------- */
+/* FONCTIONS BOI */
+/* ------------------------------- */
+
+RUN my_error_proc NO-ERROR.
+IF ERROR-STATUS:ERROR THEN
+    DYNAMIC-FUNCTION('btAfficherMessageSep', INPUT DYNAMIC-FUNCTION('btFormaterErreurSep', INPUT "|")).
+    
+// btFormaterErreurSep : renvoi un ID de message correspondant à la dernière RETURN-VALUE 
+// btAfficherMessageSep : affiche le message avec l'id donné
+
+ASSIGN
+    employe.id = ?
+    NO-ERROR.
+IF ERROR-STATUS:ERROR THEN
+    DYNAMIC-FUNCTION('btAfficherMessageSep', INPUT DYNAMIC-FUNCTION('btFormaterErreurSep', INPUT "|")).
+    
+// btFormaterErreurSep : ERROR-STATUS:GET-MESSAGE(1)
+ 
+RETURN "".
+
+PROCEDURE my_error_proc PRIVATE:
+    
+    RETURN ERROR "|SAC|FF|298|". // ID MESSAGE 
+END PROCEDURE.
