@@ -17,23 +17,28 @@ Example scenario: I want to serve a web application (written in .js). I have no 
 
 ## Installation on windows
 
-- https://docs.docker.com/docker-for-windows/install/
+Doc: https://docs.docker.com/docker-for-windows/install/.
+
+Requirements:
+
 - Linux/windows vm
 - Hyper-v
-- Minimal conf (win10 update) + CAN NOT USE SIMULTANEOUSLY WITH VMWARE!
+- Minimal conf (win10 update) + **CAN NOT USE SIMULTANEOUSLY WITH VMWARE!**
 
 ## Run nginx (engine X)
 
-- Docker search
-- Docker pull
-- Docker create
-- Docker start
-- Docker stop
-- Docker rm
-- Docker rmi
-- Docker help
+```bash
+docker search nginx
+docker pull nginx:alpine
+docker create nginx:alpine
+docker ps -a
+docker start ID
+docker stop ID
+docker rm ID
+docker rmi nginx:alpine
+```
 
-Talk about tags (latest by default) and registry: https://hub.docker.com/_/nginx.
+Talk about tags (latest by default) and registries: https://hub.docker.com/_/nginx.
 
 ## Open a shell on a running container
 
