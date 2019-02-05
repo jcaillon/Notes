@@ -158,3 +158,24 @@ docker run --rm --name youtube-dl -v E:/Download/musiques:/download youtube-dl -
 - Docker-compose exec CONTAINER bash
 - Docker network inspect DOCKERCOMPOSEPROJECT_default
 - Docker run --it --rm --net PROJECT_default alpine sh / ping HOST / 
+- logging drivers
+- how to log properly
+- fluentd elasticsearch kibana
+- health check
+
+Start on windows images
+show where the layers are stored
+talk about volumes
+show where they are stored
+container names
+switch to linux containers
+not the same place to see images/volumes?
+mobi linux vm
+
+```bash
+# Run this from your regular terminal on Windows / MacOS:
+docker container run --rm -it -v /:/host alpine
+
+# Once you're in the container that we just ran, run this:
+chroot /host
+```

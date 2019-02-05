@@ -1,8 +1,13 @@
 # Docker
 
+https://github.com/wsargent/docker-cheat-sheet
+
 ## Commands
 
 ```bash
+# check memory consumption of all containers
+docker ps -q | xargs  docker stats --no-stream
+
 # Clean image
 docker system prune
 

@@ -2,6 +2,8 @@
 {bs00ds_confserveur.i &1="NEW GLOBAL SHARED "}
 {bc00ds_confclient.i}
 
+DYNAMIC-FUNCTION('btTracesTracerMessage', INPUT ?, INPUT ?, INPUT 0, INPUT "SERVEUR", INPUT "serverConnectionBound=" + QUOTER(SESSION:SERVER-CONNECTION-BOUND) + ", serverOperatingMode=" + QUOTER(SESSION:SERVER-OPERATING-MODE) + ", serverConnectionId=" + QUOTER(SESSION:SERVER-CONNECTION-ID ) + ", serverConnectionBoundRequest=" + QUOTER(SESSION:SERVER-CONNECTION-BOUND-REQUEST) + ", executing=" + QUOTER(SESSION:CURRENT-REQUEST-INFO:ProcedureName) + ", session-free=" + QUOTER(ll_sessionFree) + ", sessionId=" + QUOTER(SESSION:CURRENT-REQUEST-INFO:SessionId) + ", adapterType=" + QUOTER(SESSION:CURRENT-REQUEST-INFO:AdapterType) + ", ctxId=" + QUOTER(SESSION:CURRENT-REQUEST-INFO:ClientContextId) + ", btGetConnectContext=" + QUOTER(SESSION:SERVER-CONNECTION-CONTEXT)).
+
 // bs00batchace.sh domaine3 p stable3 sac 464 UNIX MULTI "" ACE 0 0 test.p "PARAM1 'valeur1' PARAM2 'valeur2'"
 
 MESSAGE STRING(DYNAMIC-FUNCTION('btDeletePersistentProceduresStartingWith', INPUT "bs00xmldiasp1")).
@@ -463,3 +465,30 @@ FOR EACH ttperso WHERE ttperso.activation = "oui":
       END.
   END.
 END.
+
+
+FUNCTION btGetModeExecution RETURNS CHARACTER
+  ( /* parameter-definitions */ ) :
+/*------------------------------------------------------------------------------
+  Summary    :     
+  Parameters : <none>
+  Returns    : 
+  Remarks    :       
+------------------------------------------------------------------------------*/
+
+    DEFINE VARIABLE retVal AS CHARACTER NO-UNDO.
+
+    IF NOT SESSION:REMOTE THEN DO:
+        IF SESSION:BATCH-MODE THEN
+            RETURN "BATCH".
+        RETURN "CLIENT".        
+    END.
+    IF STRING(SESSION:CURRENT-REQUEST-INFO:AdapterType) = "SOAP" THEN
+        /* utiliser btIsSessionFree pour savoir si on est en mode managed ou free */
+        RETURN "SOAP".
+    IF STRING(SESSION:CURRENT-REQUEST-INFO:AdapterType) = "APSV" THEN
+        RETURN "SESSION".
+
+    RETURN "PASOE".
+
+END FUNCTION.
