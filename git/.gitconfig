@@ -1,35 +1,123 @@
-[commit]
-    gpgsign = true
+[http]
+    sslCAinfo = ~/.ssh/ca-bundle.crt
+# [http]
+#   # use windows API (and the windows certificate store for https)
+#   sslBackend = schannel
+[credential]
+    helper = manager
+[core]
+    symlinks = false
+    autocrlf = true
+    fscache = true
+#    hideDotFiles = false
+    hooksPath2 = ~/githooks/hooks
+    editor = 'C:/data/outils/Sublime_Text/sublime_text.exe' --wait --new-window
+[color]
+    diff = always
+    status = always
+    branch = always
+    interactive = always
+[help]
+    format = html
+[rebase]
+    autosquash = true
+[rerere]
+    enabled = true
+[pull]
+    rebase = true
 [gpg]
-    program = E:/outils/gnupg/GnuPG/pub/gpg.exe
-    interactive = auto
+    program = gpg.exe
+[filter "lfs"]
+    clean = git-lfs clean %f
+    smudge = git-lfs smudge %f
+    required = true
+[commit]
+#     template = ~/.gitmessage.txt
+    cleanup = strip
+[hook]
+    configFolderName = cnaf
+
+[mergetool]
+    prompt = false
+    keepBackup = false
+    keepTemporaries = false
+
+[merge]
+    tool = winmerge
+
+[mergetool "winmerge"]
+    name = WinMerge
+    # trustExitCode = true
+    keepBackup = false
+    cmd = 'C:/data/outils/WinMerge/WinMergeU.exe' -u -um -e -wl -wr -fm -am -dl 'On local branch' -dm 'Final file' -dr 'On merged branch' "$LOCAL" "$MERGED" "$REMOTE"
+
+[diff]
+    tool = winmerge
+
+[difftool "winmerge"]
+    name = WinMerge
+    cmd = 'C:/data/outils/WinMerge/WinMergeU.exe' -u -e -dl 'Local' -dr 'Remote' "$LOCAL" "$REMOTE"
+
+[difftool "TortoiseGitMerge"]
+    cmd = 'C:/Program Files/TortoiseGit/bin/TortoiseGitMerge.exe' -mine "$REMOTE" -base "$LOCAL"
+[mergetool "TortoiseGitMerge"]
+    cmd = 'C:/Program Files/TortoiseGit/bin/TortoiseGitMerge.exe' -base:"$BASE" -mine:"$LOCAL" -theirs:"$REMOTE" -merged:"$MERGED"
+
+
 [alias]
+    # shows a list of aliases
+    alias = config --get-regexp alias
+    # Now you can check out a particular merge request from any repository and any remote. For example, to check out the merge request with ID 5 as shown in GitLab from the upstream remote, do:
+    # git mr upstream 5
+    mr = !sh -c 'git fetch $1 merge-requests/$2/head:mr-$1-$2 && git checkout mr-$1-$2' -
+    # will add .submodules (config file) and the project file (the submodule itself) 
+    # suba https://...git
+    suba =  submodule add
+    # this will add the submodules to the .git/config + clone + checkout them
+    subinit =  submodule update --init --recursive
+    prunetags = "!git tag -l | xargs git tag -d && git fetch -t"
+    p = push origin -u
+    pt = push origin --tags
+    f = fetch
+    ft = fetch --tags
+    # remove obsolete local origin/branches + tags and fetched all tags
+    fpt = fetch --prune --prune-tags --tags
+    s = status -sbu
     st = status
-    stb = status -sb
     stp = status --porcelain
+    signored = status --ignored
     ci = commit
     br = branch
+    # list all branches in verbose mode
+    brav = branch -avv
+    # delete all branches except currentbranch
+    brdeleteall = "!git branch --color=never | grep -v \"^\\*\" | xargs git branch -D"
+    # list all the release branches that are not merged on the current branch
+    brlistunmergedrel = "!git branch -a -v --no-merged $(git currentbranch) | grep rel"
+    currentbranch = "!git branch --color=never | grep \"^\\*\" | cut -d \" \" -f 2"
     co = checkout
+    ce = config --edit
+    ceg = config --edit --global
     rs = reset
     rsh = reset --hard
     rss = reset --soft
     aa = add --all
+    # clean all, including directories
+    cleand = clean -fd
+    # clean re-checkout everything
+    cleanrecheckout = "!derp="$(git currentbranch)" && echo $derp && git co --orphan temp && git rm --cached -r * && git clean -fdx && git br -D $derp && git co $derp"
     pullr = pull --rebase
     unstage = reset HEAD
-    lol = log --graph --decorate --pretty=oneline --abbrev-commit
-    lola = log --graph --decorate --pretty=oneline --abbrev-commit --all
+    sp = stash push --include-untracked
+    lol = log --graph --decorate --pretty=oneline --abbrev-commit --left-right
+    lola = log --graph --decorate --pretty=oneline --abbrev-commit --all --left-right
     logpush = "!git --no-pager log origin/$(git currentbranch)..HEAD --oneline"
     logpull = "!git --no-pager log HEAD..origin/$(git currentbranch) --oneline"
     whatsnew = "!git diff origin/$(git currentbranch)...HEAD"
     whatscoming = "!git diff HEAD...origin/$(git currentbranch)"
-    currentbranch = "!git branch | grep \"^\\*\" | cut -d \" \" -f 2"
-[color]
-    branch = true
-    diff = true
-    status = true
-    interactive = true
-[commit]
-    template = ~/.gitmessage.txt
-    cleanup = strip
-[core]
-	editor = 'C:/data/repo/3P_notepad++x64/notepad++.exe' -multiInst -notabbar -nosession -noPlugin
+    apply-gitignore = !git ls-files -ci --exclude-standard -z | xargs -0 git rm --cached
+    clonecnaf = clone -c http.proxy=192.168.213.137:3128
+    # fix warning ignoring broken ref refs/remotes/origin/HEAD
+    setremotehead = remote set-head origin
+    # usage: git stashu "message" (also stashes untracked files)
+    stashu = stash push --include-untracked
