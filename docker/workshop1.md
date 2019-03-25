@@ -172,6 +172,8 @@ switch to linux containers
 not the same place to see images/volumes?
 mobi linux vm
 
+Access mobyLinuxVM (Hyper-V on windows)
+
 ```bash
 # Run this from your regular terminal on Windows / MacOS:
 docker container run --rm -it -v /:/host alpine
@@ -179,3 +181,172 @@ docker container run --rm -it -v /:/host alpine
 # Once you're in the container that we just ran, run this:
 chroot /host
 ```
+
+
+docker is not virtualization. 
+virtualization = an hypervisor grabs physical ressources (RAM/CPU/storage/netwok) slices them into virtual versions RAM/CPU... then builds virtual machine on them. Which looks like real machines
+docker = slices operating system resources PID ns, NET ns, FS ns. Every container gets its PID 1, root file system (chroot) = operating system virtualisation
+
+bad old days = applications run businesses, they are key. In the past, we had 1 application = 1 machine. We would choose machines to big for the task, just to be sure it runs correctly. We only use a few percent of the capability.
+then came VMs, which allows to run multiple applications on one physical machine.
+The problems with VM (imagine 4 VMs on 1 server):
+
+- multiplication of installations (for OS).
+- OS takes resources just to be ready to run apps! doesn't do anything but steals energy.
+- licencing problem because we have 4 install of our OS.
+- requires admin on each OS : update/patches/anti virus
+
+With VM, we keep our application as it is and just run it with virtualization.
+With containers (we can do the same BUT), the ultimate goal is to get apps that are scalable, self-healed, portable...
+
+docker = the company and the technology (run apps in containers) = dock + worker
+2 versions : community edition and entreprise edition (with fewer releases, more features + quality support). All opensource.
+
+Kubernetes developed from google, openesource. Was used to manage containers at google way back (1999!)
+kubernetes is greek for helmsman (timonier) (captain, of a ship), the one who steers the ship.
+docker is about managing 1 app, low lvl stuff start/stop etc...
+kubernetes is higher level : scheduling, updating, scaling, healing... Orchestrator (think about containerized apps as sound from instruments in an orchestra)
+A kubernetes cluster is composed of nodes. Each node as an install with kubernetes agent + docker runtime to manage containers.
+kubernetes manages containerized app. You can package an app and tell k8s what containerized app to run, how many, on which port and so on. It decouples the application from the server, so you can move from could to on premise and vice versa.
+
+https://labs.play-with-docker.com/
+https://labs.play-with-k8s.com/
+
+docker and kubernetes are perfectly capable of running : legacy app, stateless app and stateful app (with persisent data).
+
+
+On your local dev env, it is easy to run an app with docker-compose. But we are limited to the resources of our machine.
+What about production? we want multiple nodes (= machines) to run our app. Several nodes working together is called a cluster.
+Swarm mode is the orchestrator of docker. It has the same purpose as kubernetes.
+
+## Monitoring app
+
+It is different than monitoring on servers. Where you can use nagios (linux) or scom (win). They push metrics to a central server.
+Containers are stopped/started often, those tools are not adapted.
+
+![](images/2019-03-25-11-47-00.png)
+
+Prometheus is a polling server that request servers to pull some metrics.
+You configure prometheus to poll every x seconds on given metrics endpoint. Those endpoints are configured to return prometheus format data (1 metric per line and then : key value). This gives you timeseries.
+
+![](images/2019-03-25-11-52-15.png)
+
+Grafana allows to visualize data from prometheus in dashboards.
+Docker has an experimental /metrics api built in that you can opt in. It provides info on the docker engine.
+
+## container
+
+A container : isolated area of an OS with resource usage limits applied.
+To enable that, we use low kernel functions : control groups and namespaces (+ union filesystem). These have been there for ages (on linux) but are WAY too hard to use. Windows had to catch up in windows 10/server 2016.
+
+### Namespaces
+
+isolation = slice the OS into containers which have their own chroot, user, network interface, filesystem...
+linux namespaces =
+
+- process id (pid) (each container gets is own isolated process tree and does not known about other container processes)
+- network (net)
+- filesystem/mount (fs)
+- interproc comms (ipc) (let process in one container access shared memory)
+- UTS (give each container its own hostname)
+- User (user)
+
+### Control groups
+
+grouping objects and setting limits (in windows aka job objects). Groups processes and impose limits CPU/RAM + disk space.
+
+### Union file system
+
+Combines layers into a single unified file system.
+Layered filesystem.
+
+## docker engine
+
+Running a command = CLI -> {REST API} docker daemon -> {GRPC API} containe d (execution/lifecycle) -> OCI (runtime specification, implementation differs on lnx/win)
+
+history : docker was dotcloud, using LXC (ns and cgroups) and AUFS (union fs). Then LXC replaces by homebrew libcontainer. But docker was a monolith. They refactored it.
+Open container initiative : sets some standards for container techno (especially image specs and container runtime spec = OCI runtime specification).
+On linux, the default implement of OCI is called runc.
+
+![](images/2019-03-25-12-24-41.png)
+
+We can restart/update docker daemon without affecting containers.
+
+## Images
+
+Image :
+
+- OS files & objects
+- app files
+
+Image = stopped container. Container = started image.
+Images are composed of layers. They are read only (what you change in a container is just a new writable layer on top of the others). They are pulled from registry and used to start containers. Multiple containers can share the same image.
+When the container runs, a writable layer is added to allow writes/updates for the container.
+
+![](images/2019-03-25-17-46-46.png)
+
+There is no such thing as a BLOB image. It is composed of independent layers that are very loosely connected by a manifest file. The manifest contains a list of layers that get stacked and how they get stacked onto each other. The ID of the image is a hash of the image config file.
+
+The pull command sends a request to a docker registry API. If the image is not prefixed by a registry url, docker assumes docker hub. Then it gets the manifest file and pull all the layers needed. (Actually, it first fetched a fat manifest which list several manifest and then docker selects the right manifest depending on the host architecture `docker system info`).
+
+Each layer is addressable by its SHA256 id (hash of the content). Once pulled, we check that the hash matches.
+Each layer is visible in /var/lib/docker/(driver name = aufs or overlay 2)/diff/. Each layer is created because of a new command in docker file `docker history <image>`.
+`docker image inspect` gives the layers but what is listed are CONTENT hashed of each layers UNZIPPED which do not match with the directory names or id shown in the pull.
+What actually happens, is that when we push an image, each layer is zipped and new hashes are generated for each layer (distribution hashes). The manifest actually contains the SHA256 of those zipped layers.
+
+- Uncompressed layer on local machine have a content hash.
+- Compressed data for pushing/pulling layers have a distribution hash.
+- UUIs for storing layers on the filesystem `/var/lib/<sorage driver>/` are random.
+
+https://github.com/moby/moby/blob/master/image/spec/v1.md
+
+## Registries
+
+Images are stored in registries. Default is docker hub but you have others and you can also run a registry on premise.
+Pulling an image actually stores it in a "local" store `/var/lib/docker/<storage driver>`.
+The image names are formatted like so: `registry/repo:tag`. Registry defaults to docker.io if is is not specified.
+On docker hub, there are official and unofficial images. The defaults tag pulled is `latest`. But this latest tag must be updated manually, there is nothing automatic about that. Sometimes, the latest is not the atual latest version.
+
+Pull all images of the repo that match my host architecture:
+
+`docker pull <registry>/<repo> -a`
+
+## Build
+
+Build context: location of the code to containerize. Usually the folder in which the Dockerfile is located. From this context, you can then use the instruction COPY. Everything in the build context is sent to the docker daemon on build. You can use `.dockerignore` file to specify stuff to not send.
+
+Multi stage build:
+
+![](images/2019-03-25-17-44-01.png)
+
+## Containers
+
+docker stop sends a SIGNAL to the process id 1 to ask for shutdown. If the process does not handle the SIGNAL, then the container is given x seconds before being forced to stop.
+
+docker exec starts a new process in the container.
+
+docker container rm $(docker ls -aq)
+docker run --detach --publish-all
+
+You can use the exec form of ENTRYPOINT to set fairly stable default commands and arguments and then use either form of CMD to set additional defaults that are more likely to be changed.
+`ENTRYPOINT ["top", "-b"]` `CMD ["-c"]`
+
+CMD will be overwritten by args provided in the docker run command.
+
+By default, docker run redirects the STDERR and STDOUT, expected if detached -d.
+Add -i to also add STDIN stream (allows `<cmd> | docker run -i <image>`).
+Add -t to start a new virtual tty and have a linux/windows prompt like you logged in inside the container.
+
+## Logging
+
+### Engine/daemon
+
+Linux: systemd `journalctl -u docker.service` or `/var/log/messages`.
+Windows: `~AppData\local\docker`.
+
+### Container logs
+
+The stdout and stderr or PID1 is captured by docker.
+Docker drivers allow to take those captured logs and forward them somewhere (syslog, fluentd...).
+The default driver is stored in daemon.json.
+
