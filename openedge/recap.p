@@ -39,17 +39,6 @@ DO li_int = 1 TO EXTENT(tableau1):
         LEAVE myloop.
 END.
 
-
-/* ------------------------------- */
-/* OPERATEURS */
-/* ------------------------------- */
-AND OR NOT
-> GT 
->= GE 
-< LT 
-<= LE 
-= EQ
-
  
 /* ------------------------------- */
 /* CONTROLES */
@@ -65,6 +54,19 @@ IF TRUE THEN DO:
     MESSAGE "ok".
     MESSAGE "dos".
 END.
+
+
+/* ------------------------------- */
+/* OPERATEURS */
+/* ------------------------------- */
+AND OR NOT
+> GT 
+>= GE 
+< LT 
+<= LE 
+= EQ
+<> // different
+
 
 /* try/catch */
 unblock:
@@ -82,8 +84,15 @@ DO li_i = 1 TO 10 BY 1:
 END.
 
 /* tant que */
+dowhile:
 DO WHILE TRUE:
-
+    /* contrôle des boucles : */
+    /* rollback du block transaction */
+    UNDO dowhile.
+    /* quitter la boucle */
+    LEAVE dowhile.
+    /* passer à la prochaine boucle */
+    NEXT dowhile.
 END.
 
 /* tant que */
@@ -116,7 +125,6 @@ PROCEDURE nomproc :
     DEFINE INPUT PARAMETER ipc_name AS CHARACTER NO-UNDO.
     /* NOTE :  une procédure finit toujours par un RETURN "" i elle s'est bien passé (la chaine peut être non vide si on veut passer une valeur de retour)
     Si le traitement c'est mal passé, il faut utiliser RETURN ERROR "descrption". à la place */
-    CREATE BUFFER lh_ FOR TABLE "machin".
     RETURN "".
 END PROCEDURE.
 
@@ -140,7 +148,7 @@ MESSAGE DYNAMIC-FUNCTION('fi_function' IN lh_proc, INPUT "mon input").
 RUN nomproc.
 
 /* RUn avec paramètres */
-RUN nomproc (INPUT "mon parametre", OUTPUT "zzedze", INPUT-OUTPUT 3).
+RUN nomproc (INPUT "mon parametre", OUTPUT lc_myvalue, INPUT-OUTPUT 3).
 
 /* RUN procedure externe */
 RUN mon_fichier.p (INPUT "mon parametre").
@@ -183,10 +191,12 @@ RUN prog.p ON DYNAMIC-FUNCTION('btGetServerHandle') NO-ERROR.
 /* ------------------------------- */
 
 /* definir une variable de precompil */
-&SCOPED-DEFINE myvar VALUE
-&GLOBAL-DEFINE secondvar VALUE
-/* SCOPED = defini uniquement pour le fichier dans lequel on a cette définition */
-/* GLOBAL = défini pour tous les fichiers : si on défini ça dans un .i, qu'on inclu ce .i dans un .p, alors on peut utiliser cette variable dans le .p (on ne peut pas avec SCOPED) */
+&SCOPED-DEFINE myvar myvalue
+&GLOBAL-DEFINE secondvar myvalueofanytype
+/* SCOPED = défini pour le fichier où est définie la variable + tous les fichiers inclus à partir de ce fichier */
+/* GLOBAL = valable pour tout le reste de la compilation */
+/* utilisation de la var */
+{&secondvar}
 
 &IF TRUE &THEN
     /* permet un IF précompilé, ça fait toujours 1 expression de moins à vérifier au RUNTIME */
@@ -281,9 +291,9 @@ MESSAGE ENTRY(2, "one/two/three", "/").
 
 MESSAGE LOOKUP("two", "one/two/three", "/").
 
-MESSAGE STRING(INDEX("une phrase !", "p", 1)).
-MESSAGE STRING(INDEX("une phrase !", "e", 4)). /* search from left to right in " phrase !" -> 10*/
-MESSAGE STRING(R-INDEX("une phrase !", "e", 4)). /* search from right to left in "une " -> 3 */
+MESSAGE STRING(INDEX("une phrase!", "p", 1)).
+MESSAGE STRING(INDEX("une phrase!", "e", 4)). /* search from left to right in " phrase !" -> 10*/
+MESSAGE STRING(R-INDEX("une phrase!", "e", 4)). /* search from right to left in "une " -> 3 */
 
 MESSAGE SUBSTRING("12345", 3, 2).
 
@@ -300,7 +310,7 @@ MESSAGE REPLACE("hello one ola", "one", "two").
 MESSAGE ENCODE("password").
 
 MESSAGE STRING(CAN-DO("0,2,10", STRING(9))).
-
+MESSAGE STRING(YES, "1/0").
 
 /* ------------------------------- */
 /* FONCTIONS DATE */
@@ -342,7 +352,7 @@ MESSAGE STRING(SQRT(4)).
 /* LA VALEUR ? */
 /* ------------------------------- */
 
-/* une expression qui contient ? devient entièremet ? ; par exemple : */
+/* une expression qui contient inconnu ? devient entièrement ? ; par exemple : */
 DEFINE VARIABLE li_test AS INTEGER NO-UNDO INITIAL 9.
 DEFINE VARIABLE li_test2 AS INTEGER NO-UNDO INITIAL ?.
 ASSIGN li_test = li_test + li_test2.
@@ -355,6 +365,7 @@ IF ? THEN
 ELSE
     MESSAGE "? = false".
     
+/* seule la première lettre compte */
 MESSAGE STRING("A" > "B").
 MESSAGE STRING("a" > "B").
 MESSAGE STRING("ab" > "ac").
@@ -395,10 +406,8 @@ ELSE
 
 /* Démarrer explicitement une transaction */
 monbloc:
-DO ON ERROR UNDO monbloc:
-    DO TRANSACTION:
+DO TRANSACTION ON ERROR UNDO monbloc:
 
-    END.
 END.
 
 /*
