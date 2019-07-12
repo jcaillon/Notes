@@ -179,7 +179,7 @@ Access mobyLinuxVM (Hyper-V on windows)
 docker container run --rm -it -v /:/host alpine
 
 # Once you're in the container that we just ran, run this:
-chroot /host
+    chroot /host
 ```
 
 

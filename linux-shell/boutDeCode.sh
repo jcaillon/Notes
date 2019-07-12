@@ -1,13 +1,80 @@
+#!/bin/sh
+
+BASEDIR=$(dirname "$0")
+BASEDIR=$(realpath ${BASEDIR})
+
+outputfile=$(echo -e "./metrics_production_$(date +%Y-%m-%d_%H.%M.%S).txt")
+
+pushd ${BASEDIR}
+
+echo -e "datetime;baseurl;machine;webapp;nb sessions;nb agents;nb connections total;max session memory;max concurrent clients;total requests" | tee -a ${outputfile}
+
+while read baseurl; do
+  if [ "${baseurl}" != "" ] ; then
+
+	webapps=$(curl -s -u tomcat:tomcat "${baseurl}/oemanager/applications")
+	webappsArray=($(echo "${webapps}" | grep -oP '"applicationName"\s*:\s*"[^"]+"'))
+	urisArray=($(echo "${webapps}" | grep -oP '"uri"\s*:\s*"[^"]+"'))
+
+	for ((i = 0; i < ${#webappsArray[@]}; i++)); do
+
+      webappName=$(echo "${webappsArray[$i]}" | cut -d'"' -f 4)
+      machine=$(echo "${urisArray[$i]}" | cut -d'"' -f 4 | cut -b 10- | cut -d ":" -f 1)
+
+	  agents=$(curl -s -u tomcat:tomcat "${baseurl}/oemanager/applications/${webappName}/agents")
+	  agentsArray=($(echo "${agents}" | grep -oP '"agentId"\s*:\s*"[a-zA-Z0-9_-]+"'))
+	  nbAgents=$(echo "${agents}" | grep -oP '"agentId"\s*:\s*"[a-zA-Z0-9_-]+"' | wc -l)
+
+	  concurrentClientConnections=$(curl -s -u tomcat:tomcat "${baseurl}/oemanager/applications/${webappName}/metrics" | grep -oP '"maxConcurrentClients"\s*:\s*[0-9]+' | grep -oP '[0-9]+')
+
+	  totalNbSessions=0
+	  totalNbRequests=0
+	  totalNbConnection=0
+	  maxSessionMemoryAll=0
+
+	  for ((j = 0; j < ${#agentsArray[@]}; j++)); do
+	    id=$(echo "${agentsArray[$j]}" | grep -oP '[a-zA-Z0-9_-]{10,}')
+	    if [ "${id}" != "" ] ; then
+		  sessions=$(curl -s -u tomcat:tomcat "${baseurl}/oemanager/applications/${webappName}/agents/${id}/sessions")
+	  	  status=$(curl -s -u tomcat:tomcat "${baseurl}/oemanager/applications/${webappName}/agents/${id}/status")
+	  	  nbSessions=$(echo "${sessions}" | grep -oP '"SessionId"\s*:\s*[0-9]+' | wc -l)
+	  	  nbRequests=$(echo "${status}" | grep -oP '"requests"\s*:\s*[0-9]+' | head -1 | grep -oP '[0-9]+')
+	  	  nbConnections=$(echo "${status}" | grep -oP '"connections"\s*:\s*[0-9]+' | head -1 | grep -oP '[0-9]+')
+	  	  sessionsMemory=$(echo "${sessions}" | grep -oP '"SessionMemory"\s*:\s*[0-9]+' | grep -oP '[0-9]+')
+	  	  maxSessionMemory=$(echo "${sessionsMemory[*]}" | sort -nr | head -n1)
+	  	  maxSessionMemoryAll=$(( maxSessionMemory > maxSessionMemoryAll ? maxSessionMemory : maxSessionMemoryAll ))
+	  	  totalNbSessions=$((${totalNbSessions} + ${nbSessions}))
+	  	  totalNbRequests=$((${totalNbRequests} + ${nbRequests}))
+	  	  if [ "${nbConnections}" != "" ] ; then
+	  	    totalNbConnection=$((${totalNbConnection} + ${nbConnections}))
+	  	  fi
+	    fi
+	  done
+
+	  echo -e "$(date +%Y-%m-%d %H:%M:%S);${baseurl};${machine};${webappName};${totalNbSessions};${nbAgents};${totalNbConnection};${maxSessionMemoryAll};${concurrentClientConnections};${totalNbRequests}" | tee -a ${outputfile}
+
+	done
+
+  fi
+done <metrics_production_urls.txt
+
+popd
+
+
+
+
+
+
 #!/bin/ksh
 #-------------------------------------------------------------------------
 #    File         : boi_deployerinterv.sh
-#    Description  : Réalise l'exécution de la procédure progress de déploiement                  
+#    Description  : Rï¿½alise l'exï¿½cution de la procï¿½dure progress de dï¿½ploiement                  
 #    Author(s)    : CS-SOPRA - NLA
 #    Created      : 18/01/2016
 #  -----------------------------------------------------------------------
 #  MODIFICATION
 #   __________________________________________________________________________________________________
-#  |  N°  |  DATE      | AUTEUR     | DESCRIPTION                                                     |
+#  |  Nï¿½  |  DATE      | AUTEUR     | DESCRIPTION                                                     |
 #  |______|____________|____________|_________________________________________________________________|
 #  |      |            |            |                                                                 |
 #  |  1   | 15/02/2016 | CS-SOPRA   | 337-1 : changement du code organisme                            |
@@ -20,9 +87,9 @@ typeset -l T_CODENV
 typeset -l T_CODORGOLD
 typeset -l T_CODORGNEW
 
-# Lecture des paramètres :
+# Lecture des paramï¿½tres :
 echo ""
-echo "----- Paramétrage du batch de mise à jour des données organismes -----"
+echo "----- Paramï¿½trage du batch de mise ï¿½ jour des donnï¿½es organismes -----"
 
 echo "Code environnement (1c.) ......................... : \c"
 if [ -z "$1" ] ; then
@@ -33,7 +100,7 @@ else
 fi
 
 if [ -z "${T_CODENV}" ] || [ -z "`echo ${T_CODENV} | grep '^[0-9a-z]$'`" ] ; then
-    echo "Code environnement invalide. Attendu : unique caractère alphanumérique."
+    echo "Code environnement invalide. Attendu : unique caractï¿½re alphanumï¿½rique."
     exit 1
 fi
 
@@ -45,7 +112,7 @@ else
     echo ${T_CODORGOLD}
 fi
 if [ -z "${T_CODORGOLD}" ] || [ -z "`echo ${T_CODORGOLD} | grep '^[0-9a-z]{3}$'`" ] ; then
-    echo "Code organisme invalide. Attendu : 3 caractères alphanumériques."
+    echo "Code organisme invalide. Attendu : 3 caractï¿½res alphanumï¿½riques."
     exit 1
 fi
 
@@ -57,11 +124,11 @@ else
     echo ${T_CODORGNEW}
 fi
 if [ -z "${T_CODORGNEW}" ] || [ -z "`echo ${T_CODORGNEW} | grep '^[0-9a-z]{3}$'`" ] ; then
-    echo "Code organisme invalide. Attendu : 3 caractères alphanumériques."
+    echo "Code organisme invalide. Attendu : 3 caractï¿½res alphanumï¿½riques."
     exit 1
 fi
 
-# Récupération du code organisme (principal)
+# Rï¿½cupï¿½ration du code organisme (principal)
 nomappliboi="boi${T_CODENV}"
 pg $HOME/confinst.txt | grep "^$nomappliboi; ;" >/tmp/confinst3.tmp 2>/dev/null
 T_CODORG=`awk -v lig=2 -v numchamp=6 -f $OAPDIR/oap_champ.awk /tmp/confinst3.tmp`
@@ -71,9 +138,9 @@ ${APPLI}/boi${T_CODENV}/bs00batchace.sh "${T_CODENV}" "boi" "${T_CODORG}" "" "" 
 RET=$?
 
 if [ $RET != 0 ]; then
-    echo "**Le traitement s'est terminé en erreur, consulter les logs batch"
+    echo "**Le traitement s'est terminï¿½ en erreur, consulter les logs batch"
 else
-    echo "Le traitement s'est effectué sans erreurs"
+    echo "Le traitement s'est effectuï¿½ sans erreurs"
 fi
 
 exit $RET
@@ -88,17 +155,17 @@ T_CODORGNVO=$3
 
     echo "  Script $0"
     echo "  Changement code organisme"
-    echo "  Paramètres en entrée"
+    echo "  Paramï¿½tres en entrï¿½e"
     echo "  " $T_CODENV $T_CODORGANC $T_CODORGNVO
     if [ -d "$APPLI/boi$T_CODENV/client$T_CODORGANC" ]; then
     
-        #modification du nom du répertoire
+        #modification du nom du rï¿½pertoire
         mv -f "$APPLI/boi$T_CODENV/client$T_CODORGANC" "$APPLI/boi$T_CODENV/client$T_CODORGNVO"
         v_exit=$?
         if [ $v_exit -eq 0 ]; then
-            echo "  Nom du répertoire $APPLI/boi$T_CODENV/client$T_CODORGANC modifié en $APPLI/boi$T_CODENV/client$T_CODORGNVO"
+            echo "  Nom du rï¿½pertoire $APPLI/boi$T_CODENV/client$T_CODORGANC modifiï¿½ en $APPLI/boi$T_CODENV/client$T_CODORGNVO"
         else
-            echo "  ERREUR lors de la tentative de renommage du répertoire $APPLI/boi$T_CODENV/client$T_CODORGANC en $APPLI/boi$T_CODENV/client$T_CODORGNVO, code erreur=$v_exit"
+            echo "  ERREUR lors de la tentative de renommage du rï¿½pertoire $APPLI/boi$T_CODENV/client$T_CODORGANC en $APPLI/boi$T_CODENV/client$T_CODORGNVO, code erreur=$v_exit"
         fi
     fi
 
@@ -124,7 +191,7 @@ T_CODORGNVO=$3
             v_exit=$?
             
             if [ $v_exit -eq 0 ]; then
-                echo "  Contenu du fichier $i traité avec succès"
+                echo "  Contenu du fichier $i traitï¿½ avec succï¿½s"
                 rm -f "$i.bak"
             else
                 echo "  ERREUR lors du traitement du fichier $i, code erreur=$v_exit"
@@ -137,13 +204,13 @@ T_CODORGNVO=$3
     for i in `echo $T_LISTE_NOM`; do
         if [ -f $i ]; then
         
-            # on crée par copie le nouveau fichier (dans le nom le code org est remplacé)
-            # l'ancien fichier boit169n_s.pf est nécessaire pour bb00mig_init_appsrvtt.sh 
+            # on crï¿½e par copie le nouveau fichier (dans le nom le code org est remplacï¿½)
+            # l'ancien fichier boit169n_s.pf est nï¿½cessaire pour bb00mig_init_appsrvtt.sh 
             cp -f "$i" "`echo $i | sed -e "s/${T_CODORGANC}/${T_CODORGNVO}/g"`"
             v_exit=$?
             
             if [ $v_exit -eq 0 ]; then
-                echo "  Nom du fichier $i traité avec succès"
+                echo "  Nom du fichier $i traitï¿½ avec succï¿½s"
             else
                 echo "  ERREUR lors du traitement du fichier $i, code erreur=$v_exit"
             fi

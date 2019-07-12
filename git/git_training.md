@@ -815,6 +815,7 @@ https://nvie.com/posts/a-successful-git-branching-model/?
 - https://matthew-brett.github.io/curious-git/index.html
 - http://shafiulazam.com/gitbook/
 - https://github.com/k88hudson/git-flight-rules
+- https://learngitbranching.js.org/
 
 TO READ...
 
