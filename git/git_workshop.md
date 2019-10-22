@@ -60,6 +60,7 @@ To do :
 - Add it to the index
 - Show the repo status
 - Remove `new.md` from the index but not from the working directory
+- Amend the previous commit
 
 <details>
 <summary>Reveal solution</summary>
@@ -86,6 +87,7 @@ git touch new.md
 git add new.md
 git status
 git reset -- new.md
+git commit --amend
 ```
 
 </p>
@@ -262,6 +264,142 @@ git merge --continue
 
 </p>
 </details>
+
+## Cooperating on omega
+
+### Develop a feature
+
+Give each participant a feature (number starting from 1 incrementing by 1). 2 participant on each feature.
+
+- *developer 1*: Create your feature branch `v1/ft/INC000000x` from `v1/dev` and push it to the remote
+- *both*: Create your personal branch `v1/ft/INC000000x-tri` from `v1/ft/INC000000x`, switch to it and push it to the remote
+- Develop the feature:
+  - *developer 1*: Change line 11 in `GreetingController` (change the template), commit `GreetingController.java` with the message `v1/ft/INC000000x modified greeting template`
+  - *developer 2*: Change line 15 in `GreetingController` (change the default value), commit `GreetingController.java` with the message `v1/ft/INC000000x modified default value`
+- *both*: Push your personal branch `v1/ft/INC000000x-tri` to the remote
+- *both*: Open a new merge request, with target `v1/ft/INC000000x` (do not merge yet)
+- *developer 2*: checkout `v1/ft/INC000000x`, merge with `v1/ft/INC9999999` and push the branch to the remote
+- *both*: In gitlab, refresh the merge request, both need a rebase and can't be merged instantly
+
+<details>
+<summary>Reveal solution</summary>
+<p>
+
+```bash
+git branch v1/ft/INC000000x origin/v1/dev
+git push origin v1/ft/INC000000x -u
+git checkout -b v1/ft/INC000000x-tri v1/ft/INC000000x
+# modification
+git add src/main/java/hello/GreetingController.java
+git commit -m "v1/ft/INC000000x modified greeting template"
+git push origin v1/ft/INC000000x-tri
+git checkout v1/ft/INC000000x
+git merge origin/v1/ft/INC9999999
+git push origin
+```
+
+</p>
+</details>
+
+### Rebase personal branch
+
+We now need to rebase our personal branch onto our feature branch.
+
+- *both*: Switch to your personal branch `v1/ft/INC000000x-tri`
+- *both*: Rebase your current branch onto `v1/ft/INC000000x`
+- *both*: Push your feature branch (this will be a force push)
+- *both*: Go back to the merge request, the **merge** button should be available
+
+<details>
+<summary>Reveal solution</summary>
+<p>
+
+```bash
+git checkout v1/ft/INC000000x-tri
+git rebase origin/v1/ft/INC000000x
+git push origin v1/ft/INC000000x-tri #  fails
+git push origin v1/ft/INC000000x-tri -f
+git log
+```
+
+</p>
+</details>
+
+### Rebase feature branch
+
+We now simulate a new feature done in the version branch `v1/dev` that we need to have in our feature branch `v1/ft/INC000000x`.
+
+- *developer1*: Checkout `v1/ft/INC000000x`, rebase onto `v2/dev` then push force the branch
+- *both*: check the gitlab merge request, a rebase is needed
+- *both*: checkout and rebase your personal branch onto the `v1/ft/INC000000x`, see that you have a commit appearing twice in the log
+- *both*: rebase interactive to delete the additional commit
+
+<details>
+<summary>Reveal solution</summary>
+<p>
+
+```bash
+git checkout v1/ft/INC000000x
+git rebase origin/v2/dev
+git push origin v1/ft/INC000000x -f
+git checkout v1/ft/INC000000x-tri
+git fetch
+git rebase origin/v1/ft/INC000000x
+git rebase -i v1/ft/INC000000x
+```
+
+</p>
+</details>
+
+Delivery/release :
+
+- Merge request dev branch into your release branch (this should be a fast-forward)
+- Fetch the changes in your local repo
+- checkout the release branch and make sure it is up to date
+- create a new release tag `v1/rel/mypackagex`
+- Push it to the remote
+
+<details>
+<summary>Reveal solution</summary>
+<p>
+
+```bash
+git fetch
+git checkout v10/rel
+git pull
+git tag v10/rel/mypackage
+git push origin v10/rel/mypackage
+```
+
+</p>
+</details>
+
+Update a version with another version : we have a v10 and initiate a new v11, we add a new feature to v10, how to merge this feature in v11.
+
+- Create a new release branch `v<ID+1>/rel` from `v<TEAMMATE_ID>/rel` (this will be our v11) and push it to the remote
+- `v<ID>/rel` is ahead of `v<ID+1>/rel` by 2 commits (your code.md + new.md commits) and behind of `v<ID+1>/rel` by 2 commits (your teammate code.md and new.md commits)
+- Create a merge request to merge `v<ID>/rel` into `v<ID+1>/rel` : it says you have to manually merge the branches, no fast-forward possible
+- Checkout `v<ID+1>/rel`
+- Merge with `v<ID>/rel` (there will be conflicts, keep both sentences)
+- push `v<ID+1>/rel` to the remote
+- The merge request should indicate that the branches have been merged
+
+<details>
+<summary>Reveal solution</summary>
+<p>
+
+```bash
+git checkout -b v11/rel v20/rel
+git push origin v20/rel
+git merge # conflicts
+git mergetool
+git add code.md
+git merge --continue
+```
+
+</p>
+</details>
+
 
 ## Rebase interactive
 

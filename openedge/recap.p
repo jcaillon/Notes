@@ -12,9 +12,26 @@ DEFINE VARIABLE li_int AS INTEGER NO-UNDO.
 - LOGICAL
 - DATE
 - DATETIME
+- LONGCHAR
  */
 
-/* on met no-undo pour dire que la variable ne sera pas "rollback" lors du UNDO d'une transaction, il faut le faire pour ne pas gaspiller inutilement de la mémoire (si on ne met pas NO-UNDO, progress garde une image avant + image courante à chaque fois qu'on ouvre une transaction au lieu de simplement garder la valeur courante) */
+/* on met no-undo pour dire que la variable ne sera pas "rollback" lors du UNDO d'une transaction, il faut le faire pour ne pas gaspiller inutilement de la mémoire (si on ne met pas NO-UNDO, progress garde une image avant + image courante à chaque fois qu'on ouvre une transaction au lieu de simplement garder la valeur courante) 
+
+code exemple pour no-undo:
+DEFINE VARIABLE li_i AS INTEGER NO-UNDO.
+
+ASSIGN li_i = 1.
+
+DO TRANSACTION: 
+    ASSIGN li_i = 2.
+    UNDO, LEAVE.
+    
+    MESSAGE "coucou".
+END.
+
+MESSAGE STRING(li_i).
+*/
+
 /* Portée d'une définition :
 - si le DEFINE est au niveau 0 du .p ou .w c'est un DEFINE global et il est définit pour tout le fichier
 - sinon, si le DEFINE est dans une procédure ou fonction, alors c'est défini juste localement et sa valeur est perdue à la fin de la procédure/fonction */
@@ -27,6 +44,9 @@ ASSIGN
     li_int = 1
     li_int = 2
     .
+    
+MESSAGE "l'arbre".
+MESSAGE 'le "arbre"'.
 
 DEFINE NEW SHARED VARIABLE gc_anepasfaire AS INTEGER NO-UNDO. /* shared by a procedure called directly or indirectly by the current procedure */
 DEFINE NEW GLOBAL SHARED VARIABLE gc_anepasfaire AS INTEGER NO-UNDO. /* shared pour toute la session */
@@ -65,8 +85,10 @@ AND OR NOT
 < LT 
 <= LE 
 = EQ
-<> // different
+<> NE  // different
 
+/* opérateur ternaire */
+MESSAGE "hello " + (IF TRUE THEN "world" ELSE "you").
 
 /* try/catch */
 unblock:
@@ -173,6 +195,7 @@ MESSAGE "Retour de la procédure = " + QUOTER(RETURN-VALUE).
 PROCEDURE proc1:
     RETURN "ceci est ma string de retour pour dire comment c'est passé ma procédure".
 END.
+
 /* sinon on utilise les paramtres de type OUTPUT */
 RUN proc2 (OUTPUT lc_val).
 PROCEDURE proc2:
@@ -189,6 +212,8 @@ RUN prog.p ON DYNAMIC-FUNCTION('btGetServerHandle') NO-ERROR.
 /* ------------------------------- */
 /* PRE COMPILATION */
 /* ------------------------------- */
+
+{definition.i}
 
 /* definir une variable de precompil */
 &SCOPED-DEFINE myvar myvalue
@@ -412,7 +437,7 @@ END.
 
 /*
 Une transaction est initialisée explicitement avec le keyword TRANSACTION dans un block DO ou REPEAT ou FOR.
-Sinon, une transaction est démarrée implicitiement dès lors qu'un statement update la base (création, assign, delete).
+Sinon, une transaction est démarrée implicitiement dès lors qu'un statement update la base (création, assign, delete, find exclusive lock).
 La portée de la transaction est alors le block dans lequel on a le statement d'update.
 Les blocs qui déclenchent une transaction sont (si on update la base dans le block) :
     - FOR EACH
@@ -731,7 +756,7 @@ BUFFER-COMPARE tt_nopk TO lb_nopk SAVE ll_diff2.
 MESSAGE ll_diff2.
 
 
-/* supprimer un enregistrement? -> se positionner et DELETE*/
+/* supprimer  un enregistrement? -> se positionner et DELETE*/
 FIND FIRST lb_base WHERE lb_base.ID_EMPLOYE = 1 EXCLUSIVE-LOCK NO-WAIT NO-ERROR.
 IF AVAILABLE(lb_table) THEN DO:
     DELETE lb_table NO-ERROR.
