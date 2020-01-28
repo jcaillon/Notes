@@ -182,7 +182,6 @@ docker container run --rm -it -v /:/host alpine
     chroot /host
 ```
 
-
 docker is not virtualization. 
 virtualization = an hypervisor grabs physical ressources (RAM/CPU/storage/netwok) slices them into virtual versions RAM/CPU... then builds virtual machine on them. Which looks like real machines
 docker = slices operating system resources PID ns, NET ns, FS ns. Every container gets its PID 1, root file system (chroot) = operating system virtualisation
@@ -219,6 +218,14 @@ On your local dev env, it is easy to run an app with docker-compose. But we are 
 What about production? we want multiple nodes (= machines) to run our app. Several nodes working together is called a cluster.
 Swarm mode is the orchestrator of docker. It has the same purpose as kubernetes.
 
+
+Container images are specific to the OS and CPU they are built on. If you want your image to run on multiple CPU architectures, you have to build to target each specific CPU.
+The different different architecture are built in a single image, so you can seamlessly do a docker pull xxx without worrying about your host architecture.
+Good images to explain that : https://www.docker.com/blog/multi-arch-all-the-things/.
+Illustrate this : https://hub.docker.com/layers/mongo/library/mongo/latest/images/sha256-2e24032659c947cb4748084f4516933bee66f4ef039e51cd9474710024022c9c.
+See https://docs.docker.com/docker-for-mac/multi-arch/.
+
+
 ## Monitoring app
 
 It is different than monitoring on servers. Where you can use nagios (linux) or scom (win). They push metrics to a central server.
@@ -238,6 +245,10 @@ Docker has an experimental /metrics api built in that you can opt in. It provide
 
 A container : isolated area of an OS with resource usage limits applied.
 To enable that, we use low kernel functions : control groups and namespaces (+ union filesystem). These have been there for ages (on linux) but are WAY too hard to use. Windows had to catch up in windows 10/server 2016.
+
+https://www.slideshare.net/RohitJnagal/docker-internals
+
+https://medium.com/@nagarwal/understanding-the-docker-internals-7ccb052ce9fe#.atopwz2fj
 
 ### Namespaces
 
@@ -271,6 +282,8 @@ On linux, the default implement of OCI is called runc.
 ![](images/2019-03-25-12-24-41.png)
 
 We can restart/update docker daemon without affecting containers.
+
+https://docs.google.com/presentation/d/1OpsvPvA82HJjHN3Vm2oVrqca1FCfn0PAfxGZ2w_ZZgc/edit#slide=id.g3fc529f843_0_2
 
 ## Images
 
@@ -350,3 +363,31 @@ The stdout and stderr or PID1 is captured by docker.
 Docker drivers allow to take those captured logs and forward them somewhere (syslog, fluentd...).
 The default driver is stored in daemon.json.
 
+## Security
+
+https://owasp.org/www-project-cheat-sheets/cheatsheets/Docker_Security_Cheat_Sheet.html
+
+## cool links
+
+- https://awesome-docker.netlify.com/
+- http://nane.kratzke.pages.mylab.th-luebeck.de/about/blog/2014/08/24/valuable-docker-links/
+
+Build docker images :
+
+- https://github.com/GoogleContainerTools/jib (for java app)
+- https://github.com/GoogleContainerTools/kaniko
+
+equivalent to docker = podman = cri-o = railcar = RKT = LXC
+
+see image composition : 
+https://github.com/justone/dockviz
+
+and dive
+
+
+# Others things to know...
+
+
+`host.docker.internal` is the name under which Docker containers identify the address of the host where they're running (localhost outside the container).
+
+https://developers.redhat.com/blog/2018/02/22/container-terminology-practical-introduction/
