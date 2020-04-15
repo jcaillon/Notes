@@ -271,6 +271,10 @@ grouping objects and setting limits (in windows aka job objects). Groups process
 Combines layers into a single unified file system.
 Layered filesystem.
 
+https://enqueuezero.com/container-and-unionfs.html
+
+![](2020-04-15-13-00-39.png)
+
 ## docker engine
 
 Running a command = CLI -> {REST API} docker daemon -> {GRPC API} containe d (execution/lifecycle) -> OCI (runtime specification, implementation differs on lnx/win)
@@ -365,12 +369,12 @@ The default driver is stored in daemon.json.
 
 ## Security
 
-https://owasp.org/www-project-cheat-sheets/cheatsheets/Docker_Security_Cheat_Sheet.html
+https://snyk.io/blog/10-docker-image-security-best-practices/
+https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html
 
 ## cool links
 
-- https://awesome-docker.netlify.com/
-- http://nane.kratzke.pages.mylab.th-luebeck.de/about/blog/2014/08/24/valuable-docker-links/
+https://awesome-docker.netlify.com/
 
 Build docker images :
 
