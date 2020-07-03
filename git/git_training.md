@@ -820,3 +820,5 @@ https://nvie.com/posts/a-successful-git-branching-model/?
 TO READ...
 
 - https://www.atlassian.com/blog/git/alternatives-to-git-submodule-git-subtree
+- https://mirrors.edge.kernel.org/pub/software/scm/git/docs/user-manual.html
+- https://legends2k.github.io/note/git_nuances/
