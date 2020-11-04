@@ -31,3 +31,5 @@ Ex :
 	<!-- autre technique : aller à la page accueil d'un projet JIRA et cliquer sur une des versions, l'ID est présent dans l'URL  -->	
 	<!-- Ex : http://forge.corp.sopra/jira2/browse/CSU/fixforversion/131521  -->
     <!-- Affected versions -->
+
+
