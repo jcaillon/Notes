@@ -13,7 +13,7 @@
 
 - a brave effort to create a single character set that included every reasonable writing system
 - https://home.unicode.org/
-- in unicode, information is stoed on 16 bits (2 bytes) = 2**16 -> 65,536
+- in unicode, information is stored on 16 bits (2 bytes) = 2\*\*16 -> 65,536
 - 2 ways to store 2 bytes on disc ->  Unicode Byte Order Mark 
 - the pb : too many zeroes
 
@@ -26,7 +26,7 @@
 
 - hence why stuff like this in http : Content-Type: text/plain; charset="UTF-8"
 
-- how to know the encoding of a text? if not specified, you can TRY to guess.
+- how to know the encoding of a text? if not specified with a BOM (byte order mark)[https://en.wikipedia.org/wiki/Byte_order_mark], you can TRY to guess.
 
 # exemples
 
