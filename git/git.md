@@ -362,6 +362,7 @@ Fetching a branch means to get the branch’s head reference from a remote repos
 git fetch --prune # fetch all the branches and delete obsolete <remote>/<branch> present in your local repo (= fetch + remote prune <remote>)
 git fetch --prune-tags # prune local tags not existing in the remote
 git fetch --tags # fetch all the distant tags into your repo
+git config --add remote.origin.fetch refs/notes/commits:refs/notes/origin-notes
 ```
 
 ### git pull
@@ -384,7 +385,9 @@ git push <remote> --all # all branches
 git push <remote> --tags # all tags
 git push <remote> :<ref> # delete remote ref/branch (still need to delete the local branch)
 git push <remote> <ref> # links local ref/branch to remote branch = tracking + push
-git push <remote> <local_reference><remote_reference> # push the local reference to a remote reference with a different name
+git push <remote> <local_reference>:<remote_reference> # push the local reference to a remote reference with a different name
+git push <remote> 'refs/tags/*:refs/tags/*' # push all tags
+git push <remote> 'refs/heads/*:refs/heads/*' ^refs/heads/ref-to-exclude # push all branches except one
 ```
 
 ### git remote
@@ -549,6 +552,7 @@ git log ^master experiment # same as above (means reachable from experiment but 
 git log experiment --not master # same as above
 git log master...experiment #  all the commits that are reachable by either of two references but not by both of them
 git log --left-right master...experiment # same but you also have the info : if the commit belongs to the left branch or the right branch
+git shortlog # group commits by author
 ```
 
 ### git reflog
