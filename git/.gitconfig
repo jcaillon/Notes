@@ -1,87 +1,47 @@
-[http]
-    sslCAinfo = ~/.ssh/ca-bundle.crt
-# [http]
-#   # use windows API (and the windows certificate store for https)
-#   sslBackend = schannel
-[credential]
-    helper = manager
-[core]
-    symlinks = false
-    autocrlf = true
-    fscache = true
-#    hideDotFiles = false
-    hooksPath2 = ~/githooks/hooks
-    editor = 'C:/data/outils/Sublime_Text/sublime_text.exe' --wait --new-window
-[color]
-    diff = always
-    status = always
-    branch = always
-    interactive = always
-[help]
-    format = html
-[rebase]
-    autosquash = true
-[rerere]
-    enabled = true
-[pull]
-    rebase = true
-[gpg]
-    program = gpg.exe
-[filter "lfs"]
-    clean = git-lfs clean %f
-    smudge = git-lfs smudge %f
-    required = true
-[commit]
-#     template = ~/.gitmessage.txt
-    cleanup = strip
-[hook]
-    configFolderName = cnaf
-
-[mergetool]
-    prompt = false
-    keepBackup = false
-    keepTemporaries = false
-
-[merge]
-    tool = winmerge
-
-[mergetool "winmerge"]
-    name = WinMerge
-    # trustExitCode = true
-    keepBackup = false
-    cmd = 'C:/data/outils/WinMerge/WinMergeU.exe' -u -um -e -wl -wr -fm -am -dl 'On local branch' -dm 'Final file' -dr 'On merged branch' "$LOCAL" "$MERGED" "$REMOTE"
-
-[diff]
-    tool = winmerge
-
-[difftool "winmerge"]
-    name = WinMerge
-    cmd = 'C:/data/outils/WinMerge/WinMergeU.exe' -u -e -dl 'Local' -dr 'Remote' "$LOCAL" "$REMOTE"
-
-[difftool "TortoiseGitMerge"]
-    cmd = 'C:/Program Files/TortoiseGit/bin/TortoiseGitMerge.exe' -mine "$REMOTE" -base "$LOCAL"
-[mergetool "TortoiseGitMerge"]
-    cmd = 'C:/Program Files/TortoiseGit/bin/TortoiseGitMerge.exe' -base:"$BASE" -mine:"$LOCAL" -theirs:"$REMOTE" -merged:"$MERGED"
-
-
 [alias]
-    # shows a list of aliases
-    alias = config --get-regexp alias
-    # Now you can check out a particular merge request from any repository and any remote. For example, to check out the merge request with ID 5 as shown in GitLab from the upstream remote, do:
-    # git mr upstream 5
-    mr = !sh -c 'git fetch $1 merge-requests/$2/head:mr-$1-$2 && git checkout mr-$1-$2' -
+	# shows a list of aliases
+	alias = config --get-regexp alias
+	# Now you can check out a particular merge request from any repository and any remote. For example, to check out the merge request with ID 5 as shown in GitLab from the upstream remote, do:
+	# git getmr upstream 5
+	getmr = !sh -c 'git fetch $1 merge-requests/$2/head:mr-$1-$2 && git checkout mr-$1-$2' -
     # will add .submodules (config file) and the project file (the submodule itself) 
     # suba https://...git
-    suba =  submodule add
+    suba = submodule add
     # this will add the submodules to the .git/config + clone + checkout them
-    subinit =  submodule update --init --recursive
-    prunetags = "!git tag -l | xargs git tag -d && git fetch -t"
-    p = push origin -u
+    subinit = submodule update --init --recursive
+    prunetags = !git tag -l | xargs git tag -d && git fetch -t
+    amend = commit --amend
+    amendf = commit --amend --no-edit
+    aap = !git aa && git amendf && git pf
+    aaps = !git aa && git amendf && git pfs
+    changed = status -sb
+    filelog = log -u
+    hist = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue) [%an]%Creset' --abbrev-commit --date=relative
+    lolfromlasttag = log --graph --decorate --pretty=oneline --abbrev-commit --left-right "$(git tag --sort='-*authordate' | head -n 1)..HEAD"
+    lol = log --graph --decorate --pretty=oneline --abbrev-commit --left-right
+    lola = log --graph --decorate --pretty=oneline --abbrev-commit --all --left-right
+    logpush = !git --no-pager log origin/$(git currentbranch)..HEAD --oneline
+    logpull = !git --no-pager log HEAD..origin/$(git currentbranch) --oneline
+    whatsnew = !git diff origin/$(git currentbranch)...HEAD
+    whatscoming = !git diff HEAD...origin/$(git currentbranch)
+    shallowclone = clone --single-branch --depth 1
+    bl = blame -w -M -C
+    p = !git push origin
+    pu = !git push origin -u $(git currentbranch)
+    pf = push origin --force-with-lease
+    puf = !git push origin --force-with-lease -u $(git currentbranch)
+    pfs = push origin --force-with-lease -o ci.skip
+    pufs = !git push origin --force-with-lease -u $(git currentbranch) -o ci.skip
     pt = push origin --tags
     f = fetch
     ft = fetch --tags
-    # remove obsolete local origin/branches + tags and fetched all tags
-    fpt = fetch --prune --prune-tags --tags
+    # remove obsolete local origin/branches + tags and fetched all tags (also converts shallow repo to complete repo)
+    fpt = ![ -f .git/shallow ] && (sed -i 's|+refs/heads/master:refs/remotes/origin/master|+refs/heads/*:refs/remotes/origin/*|' .git/config && git fetch --prune --prune-tags --tags --unshallow) || git fetch --prune --prune-tags --tags
+    # pull from all subdirectories
+    pullalldir = !find . -maxdepth 3 -type f -wholename '*/.git/config' | sed 's$/.git/config$$g' | xargs -P1 -I{} git -C {} pull
+    pullalldirr = !find . -type f -wholename '*/.git/config' | sed 's$/.git/config$$g' | xargs -P1 -I{} git -C {} pull
+    foreachsubdir = !find . -maxdepth 3 -type f -wholename '*/.git/config' | sed 's$/.git/config$$g' | xargs -P1 -I{} git -C {}
+    foreachsubdirr = !find . -type f -wholename '*/.git/config' | sed 's$/.git/config$$g' | xargs -P1 -I{} git -C {}
     s = status -sbu
     st = status
     stp = status --porcelain
@@ -90,34 +50,54 @@
     br = branch
     # list all branches in verbose mode
     brav = branch -avv
+    brv = branch -vv
+    branches = branch -rav
     # delete all branches except currentbranch
-    brdeleteall = "!git branch --color=never | grep -v \"^\\*\" | xargs git branch -D"
+    brdeleteall = !git branch --color=never | grep -v \"^\\*\" | xargs git branch -D
     # list all the release branches that are not merged on the current branch
-    brlistunmergedrel = "!git branch -a -v --no-merged $(git currentbranch) | grep rel"
-    currentbranch = "!git branch --color=never | grep \"^\\*\" | cut -d \" \" -f 2"
+    brlistunmergedrel = !git branch -a -v --no-merged $(git currentbranch) | grep rel
+    currentbranch = !git branch --color=never | grep \"^\\*\" | cut -d \" \" -f 2
+    currentcommit = !echo \"$(git rev-list --max-count=1 HEAD) $(git name-rev --tags --name-only HEAD)\"
+    lastref = rev-parse --short HEAD
+    lasttag = describe --tags --abbrev=0
+    remotes = remote -v show
+    undo = reset head~
+    unstage = reset HEAD
     co = checkout
     ce = config --edit
     ceg = config --edit --global
     rs = reset
     rsh = reset --hard
     rss = reset --soft
+    resetorigin = !git reset --hard origin/$(git currentbranch)
+    ro = !git resetorigin
     aa = add --all
     # clean all, including directories
     cleand = clean -fd
-    # clean re-checkout everything
-    cleanrecheckout = "!derp="$(git currentbranch)" && echo $derp && git co --orphan temp && git rm --cached -r * && git clean -fdx && git br -D $derp && git co $derp"
+    # clean all, even ignored files!
+    cleanx = clean -fdx
     pullr = pull --rebase
-    unstage = reset HEAD
+    ri = rebase -i
+    rc = rebase --continue
+    ra = rebase --abort
+    rebaseversion = !git rebase origin/$(echo \"$(echo \"$(git currentbranch)\" | grep -Po \"v[0-9\\.]+\")/dev\")
+    rebaseiversion = !git rebase -i origin/$(echo \"$(echo \"$(git currentbranch)\" | grep -Po \"v[0-9\\.]+\")/dev\")
+    rv = !git rebaseversion
+    riv = !git rebaseiversion
+    mr = merge
+    mnf = merge --no-ff
+    mrc = merge --continue
+    mra = merge --abort
     sp = stash push --include-untracked
-    lol = log --graph --decorate --pretty=oneline --abbrev-commit --left-right
-    lola = log --graph --decorate --pretty=oneline --abbrev-commit --all --left-right
-    logpush = "!git --no-pager log origin/$(git currentbranch)..HEAD --oneline"
-    logpull = "!git --no-pager log HEAD..origin/$(git currentbranch) --oneline"
-    whatsnew = "!git diff origin/$(git currentbranch)...HEAD"
-    whatscoming = "!git diff HEAD...origin/$(git currentbranch)"
     apply-gitignore = !git ls-files -ci --exclude-standard -z | xargs -0 git rm --cached
-    clonecnaf = clone -c http.proxy=192.168.213.137:3128
     # fix warning ignoring broken ref refs/remotes/origin/HEAD
     setremotehead = remote set-head origin
     # usage: git stashu "message" (also stashes untracked files)
     stashu = stash push --include-untracked
+    cp = cherry-pick
+    # clean re-checkout everything
+    cleanrecheckout = !derp=$(git currentbranch) && echo $derp && git co --orphan temp && git rm --cached -r * && git clean -fdx && git br -D $derp && git co $derp
+    # Checkout everything with the right end of line
+    rcewreol = !git rm --cached -r . && git reset --hard HEAD
+    # Normalize eol on repo after setting this file
+    normalizeeol = add --renormalize **
