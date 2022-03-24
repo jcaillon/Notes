@@ -432,3 +432,92 @@ Finally it stops asking the new message for `derp E`. Input `added E`.
 
 </p>
 </details>
+
+## Clone a repository
+
+- Clone the repository https://xxx/jca/git-training
+- List all the local branches
+- List all the branches (including remote)
+
+<details>
+<summary>Reveal commands</summary>
+<p>
+
+```bash
+git clone https://xxx/jca/git-training
+git branch
+git branch -av
+```
+
+</p>
+</details>
+
+## Add your feature
+
+### Step 1
+
+In this scenario, you are developer that will contribute to the repo https://xxx/jca/git-training.
+
+You will add a new feature (for the sake of this tutorial, you can modify/add any file that does not break the build).
+
+- Create a new branch feat/mylogin (e.g; feat/jcaillon)
+- Do some modifications on the repo (e.g. add a file with some random  content)
+- Commit your modifications
+- Push your modification to the remote repo with the same branch name feat/mylogin
+- Open a merge request on gitlab from feat/mylogin to master
+- Set one of your teammate as an approver for your merge request
+
+<details>
+<summary>Reveal commands</summary>
+<p>
+
+```bash
+git checkout -b feat/mylogin
+echo "salut!" > coucou.txt
+git add --all
+git commit -m "feat: mylogin"
+git push origin -u feat/mylogin
+```
+
+</p>
+</details>
+
+### Step 2
+
+Wait for everyone to have cloned the repository (first tutorial git clone).
+
+The trainer will now merge feat/ci to the main branch. Since the main has a new commit, you will have to integrate this modification on your local branch before you can merge because the repository is set up to only allow fast-forward merge from merge requests
+
+Refresh your merge request; notice you no longer have the option to immediately merge and gitlab now suggest to automatically rebase your branch. Do not do it on gitlab, we will do it locally.
+
+- Fetch the remote updates
+- show the commit log for master and for origin/master
+- show the commit difference between master and origin/master
+- Check the modifications done on master using the log in git tortoise
+- Rebase your feature branch feat/mylogin onto origin/main
+- Attempt to push your branch to the remote
+- Push again to the remote with -f (force) option
+- checkout main
+- do a reset to have the same changes as in the remote for the main branch
+- show the commit log
+
+<details>
+<summary>Reveal commands</summary>
+<p>
+
+```bash
+git fetch
+git log main
+git log origin/main
+git log main...origin/main
+# git tortoise
+git rebase origin/main
+git push
+git push -f
+git checkout main
+git reset --hard origin/main
+git log
+```
+
+</p>
+</details>
